@@ -1,0 +1,31 @@
+[project]
+name = "menyene_mine"
+version = "0.1.0"
+description = "menyene-mine - a fastapi project"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic-settings",
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy[asyncio]",
+    "alembic",
+    "aiosqlite",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "httpx",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

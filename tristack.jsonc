@@ -1,0 +1,19 @@
+// TriStack configuration for this project.
+{
+  "version": "1.0.9",
+  "createdAt": "2026-11-07T14:38:38.032Z",
+  "reproducibleCommand": "uvx tristack . --language python --framework fastapi --frontend none --orm sqlalchemy --migrations alembic --database sqlite --package-manager uv --addons docker,ruff,pytest,mypy,github-actions --git --install",
+  "language": "python",
+  "framework": "fastapi",
+  "orm": "sqlalchemy",
+  "migrations": "alembic",
+  "database": "sqlite",
+  "packageManager": "uv",
+  "addons": [
+    "docker",
+    "ruff",
+    "pytest",
+    "mypy",
+    "github-actions"
+  ]
+}
