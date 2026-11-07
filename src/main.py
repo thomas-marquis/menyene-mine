@@ -1,19 +1,19 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from .api.router import api_router
-from .config import get_settings
-from .db import close_db
-from .exceptions import register_exception_handlers
-from .middleware import add_middleware
+from .controllers.rest.exceptions import register_exception_handlers
+from .controllers.rest.middlewares import add_middleware
+from .controllers.rest.routes import router as items_router
+from .infra.db import close_db
+from .settings import get_settings
 
 settings = get_settings()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     yield
     await close_db()
 
@@ -22,7 +22,12 @@ def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, lifespan=lifespan)
     add_middleware(app)
     register_exception_handlers(app)
-    app.include_router(api_router)
+    app.include_router(items_router, prefix="/api/v1/items", tags=["items"])
+
+    @app.get("/health")
+    async def health() -> dict[str, str]:
+        return {"status": "ok"}
+
     return app
 
 
