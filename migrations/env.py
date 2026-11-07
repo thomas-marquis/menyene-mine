@@ -6,13 +6,16 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from src.infra.models.item import Base
+from src.infra.models.base import Base
+from src.infra.models.recipe import Recipe  # noqa: F401
 from src.settings import get_settings
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Import all models to ensure they are registered with Base.metadata
 
 target_metadata = Base.metadata
 
