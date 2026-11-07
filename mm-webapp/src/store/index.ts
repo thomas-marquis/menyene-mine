@@ -1,14 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, type TypedUseSelectorHook, useSelector } from 'react-redux';
 
-// Import slices here
-import authReducer from '../features/auth/authSlice';
-
 // Configure the store
+// For now, we don't need any slices since we're not implementing authentication
+// We'll keep the store structure for future use
+
 export const store = configureStore({
   reducer: {
-    // Add slices here
-    auth: authReducer,
+    // Add slices here when needed
   },
   middleware: (getDefaultMiddleware) => {
     return getDefaultMiddleware({

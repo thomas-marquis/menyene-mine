@@ -20,6 +20,7 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const buttonClasses = [
+    'btn',
     styles.button,
     styles[variant],
     styles[size],
@@ -36,8 +37,18 @@ export const Button = ({
       disabled={disabled || loading}
       {...props}
     >
-      {loading ? <span className={styles.spinner}></span> : null}
-      {children}
+      {loading ? (
+        <>
+          <span
+            className="spinner-border spinner-border-sm me-2"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          Loading...
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 };

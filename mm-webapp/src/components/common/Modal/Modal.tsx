@@ -56,7 +56,7 @@ export const Modal = ({
           <div className={styles.header}>
             <h2 className={styles.title}>{title}</h2>
             <button className={styles.closeButton} onClick={onClose}>
-              &times;
+              <i className="bi bi-x-lg"></i>
             </button>
           </div>
         )}

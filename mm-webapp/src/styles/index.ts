@@ -1,2 +1,2 @@
-import './globals.css';
-import './variables.css';
+export * from "./globals.css";
+export * from "./variables.css";

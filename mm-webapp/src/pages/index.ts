@@ -1,3 +1,3 @@
-export * from './Home';
-export * from './About';
+export * from './RecipeList';
+export * from './RecipeDetail';
 export * from './NotFound';

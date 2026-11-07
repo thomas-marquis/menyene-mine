@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     app_name: str = "menyene-mine"
     debug: bool = False
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     database_url: str = f"sqlite+aiosqlite:///./{DATABASE_NAME}.db"
 
 

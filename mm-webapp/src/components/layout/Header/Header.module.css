@@ -1,10 +1,8 @@
 .header {
-  background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: white;
+  border-bottom: 1px solid #e9ecef;
   padding: 1rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .container {
@@ -14,17 +12,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .logo {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #333;
+  color: #3498db;
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .logo:hover {
-  color: #007bff;
+  color: #2980b9;
 }
 
 .nav {
@@ -33,7 +36,7 @@
 }
 
 .navLink {
-  color: #333;
+  color: #495057;
   text-decoration: none;
   font-weight: 500;
   padding: 0.5rem 0;
@@ -41,7 +44,7 @@
 }
 
 .navLink:hover {
-  color: #007bff;
+  color: #3498db;
 }
 
 .navLink::after {
@@ -49,17 +52,39 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 0;
+  right: 0;
   height: 2px;
-  background-color: #007bff;
-  transition: width 0.3s ease;
+  background: #3498db;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 .navLink:hover::after {
-  width: 100%;
+  transform: scaleX(1);
 }
 
-.userInfo {
-  font-size: 0.875rem;
-  color: #666;
+.createButton {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .createButton {
+    width: 100%;
+  }
+
+  .createButton button {
+    width: 100%;
+    justify-content: center;
+  }
 }
