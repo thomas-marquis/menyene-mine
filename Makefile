@@ -1,4 +1,4 @@
-.PHONY: help install lint format typecheck test test-unit test-integration run db-migrate db-upgrade clean
+.PHONY: help install lint format typecheck test test-unit test-integration run run-frontend db-migrate db-upgrade clean
 
 # Default target
 help:
@@ -11,6 +11,7 @@ help:
 	@echo "  test-unit   - Run unit tests"
 	@echo "  test-integration - Run integration tests"
 	@echo "  run         - Start development server"
+	@echo "  run-frontend - Start frontend development server"
 	@echo "  db-migrate  - Create new database migration"
 	@echo "  db-upgrade  - Apply database migrations"
 	@echo "  clean       - Clean build artifacts"
@@ -45,6 +46,13 @@ test-integration:
 # Run development server
 run:
 	uv run uvicorn src.main:app --reload
+
+# Run frontend development server
+run-frontend:
+	@if command -v nvm &> /dev/null; then \
+		nvm use 24 2>/dev/null || echo "Node 24 not installed, using default"; \
+	fi
+	cd mm-webapp && npm run dev
 
 # Database migrations
 db-migrate:

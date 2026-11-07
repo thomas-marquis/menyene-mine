@@ -1,0 +1,15 @@
+@import './styles/globals.css';
+@import './styles/variables.css';
+
+/* Main content styling */
+.main-content {
+  min-height: calc(100vh - 120px);
+  padding: 2rem 0;
+}
+
+/* App container */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
