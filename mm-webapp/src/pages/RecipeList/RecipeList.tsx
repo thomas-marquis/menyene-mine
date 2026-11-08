@@ -14,7 +14,7 @@ export const RecipeListPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalRecipes, setTotalRecipes] = useState<number>(0);
+
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Recipe[]>([]);
@@ -30,7 +30,6 @@ export const RecipeListPage = () => {
       setSuccessMessage(null);
       const response = await recipeService.getAllRecipes(0, 1000); // Get all recipes
       setAllRecipes(response.recipes);
-      setTotalRecipes(response.total);
     } catch (err: any) {
       if (err.response) {
         setError('Failed to fetch recipes. Please try again later.');
@@ -61,7 +60,6 @@ export const RecipeListPage = () => {
         setError(null);
         const response = await recipeService.searchRecipes(query, 0, 1000); // Get all matching recipes
         setSearchResults(response.recipes);
-        setTotalRecipes(response.total);
         setCurrentPage(1);
       } catch (err: any) {
         if (err.response) {
