@@ -2,18 +2,38 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from .domain.ports.recipe_repository import RecipeRepositoryPort
 from .infra.db import AsyncSession, get_session
-from .infra.repositories.item_repository import ItemRepositoryImpl
-from .use_cases.item_use_cases import ItemUseCases
+from .infra.repositories.recipe_repository import RecipeRepositoryImpl
+from .use_cases.recipe_use_cases import RecipeUseCases
+
+recipe_repository: RecipeRepositoryPort | None = None
+recipe_use_cases: RecipeUseCases | None = None
 
 
-def get_item_repository(session: Annotated[AsyncSession, Depends(get_session)]) -> ItemRepositoryImpl:
-    """Dependency for ItemRepository."""
-    return ItemRepositoryImpl(session)
+def get_recipe_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> RecipeRepositoryPort:
+    """Dependency for RecipeRepository."""
+    global recipe_repository
+    if recipe_repository is None:
+        recipe_repository = RecipeRepositoryImpl(session)
+    return recipe_repository
 
 
-def get_item_use_cases(
-    repository: Annotated[ItemRepositoryImpl, Depends(get_item_repository)],
-) -> ItemUseCases:
-    """Dependency for ItemUseCases."""
-    return ItemUseCases(repository)
+def get_recipe_use_cases(
+    repository: Annotated[RecipeRepositoryPort, Depends(get_recipe_repository)],
+) -> RecipeUseCases:
+    """Dependency for RecipeUseCases."""
+    global recipe_use_cases
+    if recipe_use_cases is None:
+        recipe_use_cases = RecipeUseCases(repository)
+    return recipe_use_cases
+
+
+def override_recipe_repository(
+    impl: RecipeRepositoryPort,
+) -> None:
+    """Override dependency for RecipeRepository."""
+    global recipe_repository
+    recipe_repository = impl

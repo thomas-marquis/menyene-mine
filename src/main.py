@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from .controllers.rest.exceptions import register_exception_handlers
 from .controllers.rest.middlewares import add_middleware
-from .controllers.rest.routes import router as items_router
+from .controllers.rest.recipe_routes import router as recipes_router
 from .infra.db import close_db
 from .settings import get_settings
 
@@ -22,7 +22,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, lifespan=lifespan)
     add_middleware(app)
     register_exception_handlers(app)
-    app.include_router(items_router, prefix="/api/v1/items", tags=["items"])
+    app.include_router(recipes_router, prefix="/api/v1", tags=["recipes"])
 
     @app.get("/health")
     async def health() -> dict[str, str]:

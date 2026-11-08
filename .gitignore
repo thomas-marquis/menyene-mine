@@ -34,3 +34,8 @@ coverage
 tmp
 temp
 /*.db
+/_bmad*
+/.agents
+/skills-lock.json
+/bin
+/.coverage

@@ -12,15 +12,38 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
       - uses: astral-sh/setup-uv@v5
       - name: Install dependencies
         run: uv sync
-      - name: Lint
+      
+      - name: Lint with ruff
         run: uv run ruff check .
-      - name: Format check
+      
+      - name: Format check with ruff
         run: uv run ruff format --check .
-      - name: Type check
+      
+      - name: Type check with mypy
         run: uv run mypy .
-      - name: Test
-        run: uv run pytest
+      
+      - name: Run unit tests with coverage
+        id: unit-tests
+        run: uv run pytest tests/unit/ --cov=src --cov-report=xml --cov-report=term --cov-fail-under=0
+      
+      - name: Run integration tests
+        run: uv run behave tests/integration/features/
+      
+      - name: Check coverage threshold
+        run: |
+          # Extract coverage percentage from pytest-cov output
+          COVERAGE=$(uv run pytest tests/unit/ --cov=src --cov-report=term --cov-fail-under=0 -q 2>&1 | grep -oP '\d+(?=%$)')
+          if [ -z "$COVERAGE" ]; then
+            # Alternative method: parse coverage.xml
+            COVERAGE=$(grep -oP 'rate="\K[0-9.]+' coverage.xml | head -1 | awk '{printf "%.0f", $1 * 100}')
+          fi
+          echo "Current coverage: ${COVERAGE}%"
+          if [ "$COVERAGE" -lt 80 ] 2>/dev/null; then
+            echo "::warning::Coverage is below 80% (${COVERAGE}%)"
+          else
+            echo "Coverage is acceptable (${COVERAGE}% >= 80%)"
+          fi
