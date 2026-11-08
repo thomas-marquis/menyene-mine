@@ -144,6 +144,43 @@
   min-width: auto;
 }
 
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.editButton {
+  padding: 0.5rem;
+  min-width: auto;
+}
+
+.editForm {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.editForm .form-control {
+  flex: 1;
+  min-width: 150px;
+}
+
+.editForm .form-control:first-child {
+  min-width: 200px;
+}
+
+.editButtons {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.editButtons .btn {
+  padding: 0.375rem 0.5rem;
+  min-width: auto;
+}
+
 .emptyState {
   display: flex;
   flex-direction: column;
