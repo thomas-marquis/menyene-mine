@@ -1,4 +1,4 @@
-.PHONY: help install lint format typecheck test test-unit test-integration run run-frontend db-migrate db-upgrade clean
+.PHONY: help install lint format typecheck test test-unit test-integration run run-frontend db-migrate db-upgrade clean ci-local
 
 # Default target
 help:
@@ -16,6 +16,7 @@ help:
 	@echo "  db-upgrade  - Apply database migrations"
 	@echo "  clean       - Clean build artifacts"
 	@echo "  all         - Run lint, format, typecheck, and tests"
+	@echo "  ci-local    - Test CI pipeline locally with act"
 
 # Install dependencies
 install:
@@ -73,3 +74,10 @@ clean:
 
 # Run all checks
 all: lint format typecheck test-unit test-integration
+
+# Test CI pipeline locally with act
+# Note: Requires act to be installed (./bin/act) and Docker running
+# First run: ./bin/act -P ubuntu-latest=node:18-buster-slim
+# Then run: make ci-local
+ci-local:
+	./bin/act pull_request -j test --bind

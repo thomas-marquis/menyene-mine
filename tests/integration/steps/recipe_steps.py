@@ -211,8 +211,8 @@ def step_then_response_not_contains_title(context: Any, title: str) -> None:
 
 # Helper steps for setting up test data
 @given(
-    'a recipe exists with id {recipe_id:d}, title "{title}", content "{content}", and summary "{summary}"'
-)  # noqa: E501
+    'a recipe exists with id {recipe_id:d}, title "{title}", content "{content}", and summary "{summary}"'  # noqa: E501
+)
 def step_given_recipe_exists(
     context: Any, recipe_id: int, title: str, content: str, summary: str
 ) -> None:  # noqa: E501

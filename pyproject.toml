@@ -20,6 +20,7 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "pytest-mock",
+    "pytest-cov>=7.1.0",
     "httpx",
     "behave",
 ]
