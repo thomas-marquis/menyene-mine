@@ -10,6 +10,10 @@ dependencies = [
     "sqlalchemy[asyncio]",
     "alembic",
     "aiosqlite",
+    "langchain>=0.3.0",
+    "langgraph>=0.2.0",
+    "mistralai>=1.0.0",
+    "langchain-mistralai>=1.1.6",
 ]
 
 [dependency-groups]
