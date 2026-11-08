@@ -10,7 +10,7 @@ from .infra.db import AsyncSession, get_session
 from .infra.repositories.grocery_repository import GroceryRepositoryImpl
 from .infra.repositories.recipe_draft_repository import RecipeDraftRepositoryImpl
 from .infra.repositories.recipe_repository import RecipeRepositoryImpl
-from .services.ai_recipe_generator import MockRecipeAIGenerator, RecipeAIGenerator
+from .services import MockRecipeAIGenerator, RecipeAIGenerator
 from .settings import get_settings
 from .use_cases.grocery_use_cases import GroceryUseCases
 from .use_cases.recipe_draft_use_cases import RecipeDraftUseCases
