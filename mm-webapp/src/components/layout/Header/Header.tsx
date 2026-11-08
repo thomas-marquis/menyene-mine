@@ -12,6 +12,9 @@ export const Header = () => {
           <Link to="/" className={styles.navLink}>
             Recipes
           </Link>
+          <Link to="/groceries" className={styles.navLink}>
+            Grocery List
+          </Link>
         </nav>
       </div>
     </header>

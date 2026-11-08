@@ -34,3 +34,35 @@ class RecipeListResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+
+class GroceryItemCreate(BaseModel):
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+    quantity: Annotated[str | None, StringConstraints(strip_whitespace=True, max_length=255)] = None
+    is_completed: bool = False
+
+
+class GroceryItemUpdate(BaseModel):
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+    quantity: Annotated[str | None, StringConstraints(strip_whitespace=True, max_length=255)] = None
+    is_completed: bool = False
+
+
+class GroceryItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    quantity: str | None
+    is_completed: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class GroceryItemListResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    grocery_items: list[GroceryItemResponse]
+    total: int
+    skip: int
+    limit: int
