@@ -1,0 +1,117 @@
+.listContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.tabsContainer {
+  margin-bottom: 2rem;
+}
+
+.draftsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.draftCardWrapper {
+  position: relative;
+}
+
+.cardActions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.deleteButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteButton:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.pagination {
+  margin-top: 2rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.emptyIcon {
+  margin-bottom: 1rem;
+}
+
+.emptyState h3 {
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.emptyState p {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.loadingContainer,
+.errorContainer {
+  text-align: center;
+  padding: 3rem;
+}
+
+.errorContainer {
+  color: #dc3545;
+}
+
+@media (max-width: 768px) {
+  .listContainer {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .draftsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+}

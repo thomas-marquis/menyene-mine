@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
@@ -66,3 +66,54 @@ class GroceryItemListResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+
+# Recipe Draft Schemas
+class RecipeDraftGenerateRequest(BaseModel):
+    """Request schema for generating recipe drafts."""
+
+    prompt: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+    max_drafts: int = 10
+
+
+class RecipeDraftResponse(BaseModel):
+    """Response schema for a recipe draft."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_prompt: str
+    generated_content: dict[str, Any]
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    recipe_id: int | None
+
+
+class RecipeDraftListResponse(BaseModel):
+    """Response schema for listing recipe drafts."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    drafts: list[RecipeDraftResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+class RecipeDraftStatsResponse(BaseModel):
+    """Response schema for recipe draft statistics."""
+
+    total: int
+    draft: int
+    validated: int
+    rejected: int
+
+
+class RecipeDraftActionResponse(BaseModel):
+    """Response schema for draft validation/rejection actions."""
+
+    success: bool
+    message: str
+    draft: RecipeDraftResponse | None = None
+    recipe: RecipeResponse | None = None
