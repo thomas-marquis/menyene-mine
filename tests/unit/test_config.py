@@ -156,7 +156,7 @@ class TestPromptLoader:
         assert "expert chef" in rendered.lower()
 
         # Render with context
-        rendered = loader.render("recipe_generation", prompt="Make a cake")
+        rendered = loader.render("recipe_generation", instruction="Make a cake")
         assert "Make a cake" in rendered
         assert "exactly ONE" in rendered
 

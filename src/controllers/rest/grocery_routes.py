@@ -60,9 +60,7 @@ async def list_grocery_items_endpoint(
 
 
 @router.get("/{grocery_item_id}", response_model=GroceryItemResponse)
-async def get_grocery_item_endpoint(
-    grocery_item_id: int, use_cases: GroceryUseCasesDep
-) -> GroceryItemResponse:
+async def get_grocery_item_endpoint(grocery_item_id: int, use_cases: GroceryUseCasesDep) -> GroceryItemResponse:
     """Get a single grocery item by its ID."""
     grocery_item = await use_cases.get_grocery_item(grocery_item_id)
     if grocery_item is None:

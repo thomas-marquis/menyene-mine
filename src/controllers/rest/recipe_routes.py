@@ -30,9 +30,7 @@ def _recipe_to_response(recipe: Recipe) -> RecipeResponse:
 
 
 @router.post("/", response_model=RecipeResponse, status_code=status.HTTP_201_CREATED)
-async def create_recipe_endpoint(
-    payload: RecipeCreate, use_cases: RecipeUseCasesDep
-) -> RecipeResponse:
+async def create_recipe_endpoint(payload: RecipeCreate, use_cases: RecipeUseCasesDep) -> RecipeResponse:
     """Create a new recipe."""
     recipe = await use_cases.create_recipe(
         title=payload.title,
@@ -90,9 +88,7 @@ async def get_recipe_endpoint(recipe_id: int, use_cases: RecipeUseCasesDep) -> R
 
 
 @router.put("/{recipe_id}", response_model=RecipeResponse)
-async def update_recipe_endpoint(
-    recipe_id: int, payload: RecipeUpdate, use_cases: RecipeUseCasesDep
-) -> RecipeResponse:
+async def update_recipe_endpoint(recipe_id: int, payload: RecipeUpdate, use_cases: RecipeUseCasesDep) -> RecipeResponse:
     """Update an existing recipe."""
     recipe = await use_cases.update_recipe(
         recipe_id=recipe_id,

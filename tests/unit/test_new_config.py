@@ -3,6 +3,7 @@ Unit tests for the new modular configuration system.
 """
 
 import os
+from collections.abc import Generator
 
 import pytest
 
@@ -21,7 +22,7 @@ from src.config.loader import ConfigLoader
 
 
 @pytest.fixture(autouse=True)
-def reset_config_cache():
+def reset_config_cache() -> Generator[None]:
     """Reset config cache before each test."""
     reset_settings()
     yield

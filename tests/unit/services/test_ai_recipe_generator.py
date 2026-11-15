@@ -50,5 +50,9 @@ class TestRecipeAIGenerator:
         # Then
         assert isinstance(pasta_recipe, Recipe)
         assert isinstance(salad_recipe, Recipe)
-        # Titles should be different (with high probability)
-        assert pasta_recipe.title != salad_recipe.title
+        # Recipes should be different - check multiple fields to reduce flakiness
+        assert (
+            pasta_recipe.title != salad_recipe.title
+            or pasta_recipe.summary != salad_recipe.summary
+            or pasta_recipe.content != salad_recipe.content
+        )

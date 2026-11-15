@@ -86,7 +86,7 @@ uv run alembic upgrade head
 
 ## Quality
 
-Python 3.12, line-length 100, strict mypy. CI order: lint → format → typecheck → test.
+Python 3.13, line-length 120, strict mypy. CI order: lint → format → typecheck → test.
 
 **Import Rules:**
 - **NEVER** import modules inside functions or methods
