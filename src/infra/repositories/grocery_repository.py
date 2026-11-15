@@ -17,7 +17,7 @@ class GroceryRepositoryImpl(GroceryRepositoryPort):
         grocery_item_model = GroceryItemModel(
             name=grocery_item.name,
             quantity=grocery_item.quantity,
-            is_completed=grocery_item.is_completed if grocery_item.is_completed is not None else False,
+            is_completed=(grocery_item.is_completed if grocery_item.is_completed is not None else False),
         )
         self._session.add(grocery_item_model)
         await self._session.commit()

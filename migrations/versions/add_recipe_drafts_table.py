@@ -5,6 +5,7 @@ Revises: d2ab91719aa8
 Create Date: 2026-11-08 00:00:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -39,13 +40,13 @@ def upgrade() -> None:
             ondelete="SET NULL",
         ),
     )
-    
+
     # Create index on status for filtering
     op.create_index(op.f("ix_recipe_drafts_status"), "recipe_drafts", ["status"], unique=False)
-    
+
     # Create index on recipe_id for joins
     op.create_index(op.f("ix_recipe_drafts_recipe_id"), "recipe_drafts", ["recipe_id"], unique=False)
-    
+
     # Create index on created_at for sorting
     op.create_index(op.f("ix_recipe_drafts_created_at"), "recipe_drafts", ["created_at"], unique=False)
 
@@ -55,9 +56,9 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_recipe_drafts_created_at"), table_name="recipe_drafts")
     op.drop_index(op.f("ix_recipe_drafts_recipe_id"), table_name="recipe_drafts")
     op.drop_index(op.f("ix_recipe_drafts_status"), table_name="recipe_drafts")
-    
+
     # Drop table
     op.drop_table("recipe_drafts")
-    
+
     # Drop enum type
     op.execute("DROP TYPE IF EXISTS recipedraftstatus")

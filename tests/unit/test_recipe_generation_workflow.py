@@ -191,10 +191,7 @@ class TestRecipeGenerationWorkflow:
             "instruction": "Make a cake",
             "validated_instruction": True,
             "instruction_error": None,
-            "generated_recipes": [],
-            "validated_recipes": [],
-            "recipe_errors": [],
-            "final_recipe": None,
+            "recipe": None,
             "error": None,
         }
 
@@ -220,14 +217,10 @@ class TestRecipeGenerationState:
             "instruction": "Make a test",
             "validated_instruction": True,
             "instruction_error": None,
-            "generated_recipes": [recipe],
-            "validated_recipes": [recipe],
-            "recipe_errors": [],
-            "final_recipe": recipe,
+            "recipe": recipe,
             "error": None,
         }
 
         assert state["instruction"] == "Make a test"
         assert state["validated_instruction"] is True
-        assert state["generated_recipes"] == [recipe]
-        assert state["final_recipe"] == recipe
+        assert state["recipe"] == recipe

@@ -155,12 +155,9 @@ You are an expert chef specializing in {{ recipe_type }} recipes.
 3. Use the template in your code:
    ```python
    from src.config import get_prompt_loader
-   
+
    loader = get_prompt_loader()
-   prompt = loader.render("meal_planning", 
-                         days=7, 
-                         servings=2,
-                         dietary_restrictions=["vegetarian"])
+   prompt = loader.render("meal_planning", days=7, servings=2, dietary_restrictions=["vegetarian"])
    ```
 
 ## Configuration Loading
@@ -200,9 +197,7 @@ templates = loader.list_templates()
 template = loader.load("system")
 
 # Render a template with context
-rendered = loader.render("recipe_generation", 
-                        prompt="Make a cake",
-                        num_recipes=1)
+rendered = loader.render("recipe_generation", prompt="Make a cake", num_recipes=1)
 
 # Get raw template content
 raw = loader.get_raw("system")
@@ -228,6 +223,7 @@ print(settings.judge_enabled)
 
 # Reset settings cache (for testing)
 from src.settings import reset_settings
+
 reset_settings()
 ```
 
@@ -247,6 +243,7 @@ The system integrates with FastAPI's dependency injection:
 from src.di import get_ai_recipe_generator, get_llm_judge
 from fastapi import Depends
 
+
 @app.post("/generate")
 async def generate_recipe(
     prompt: str,
@@ -257,7 +254,7 @@ async def generate_recipe(
     is_valid, error = await judge.validate_prompt(prompt)
     if not is_valid:
         raise HTTPException(status_code=400, detail=error)
-    
+
     # Generate recipe
     recipes = await generator.generate_recipes(prompt)
     return recipes
@@ -278,11 +275,13 @@ async def generate_recipe(
 import pytest
 from src.config import get_prompt_loader, reset_loaders
 
+
 @pytest.fixture(autouse=True)
 def reset_config():
     """Reset config before each test."""
     reset_loaders()
     yield
+
 
 def test_prompt_rendering():
     loader = get_prompt_loader()

@@ -51,10 +51,7 @@ class MockRecipeAIGenerator(RecipeGenerator):
             "Spicy",
         ]
         nouns = ["Recipe", "Dish", "Meal", "Creation", "Delight", "Specialty"]
-        title = (
-            f"{self._random.choice(adjectives)} {main_keyword.capitalize()} "
-            f"{self._random.choice(nouns)}"
-        )
+        title = f"{self._random.choice(adjectives)} {main_keyword.capitalize()} {self._random.choice(nouns)}"
 
         # Generate ingredients
         ingredients = self._generate_mock_ingredients(main_keyword)
@@ -71,9 +68,7 @@ class MockRecipeAIGenerator(RecipeGenerator):
         )
 
         # Generate content (full recipe in markdown format)
-        content = self._format_recipe_content(
-            title, summary, ingredients, instructions
-        )
+        content = self._format_recipe_content(title, summary, ingredients, instructions)
 
         return RecipeEntity(
             title=title,
@@ -81,9 +76,7 @@ class MockRecipeAIGenerator(RecipeGenerator):
             content=content,
         )
 
-    def _format_recipe_content(
-        self, title: str, summary: str, ingredients: str, instructions: str
-    ) -> str:
+    def _format_recipe_content(self, title: str, summary: str, ingredients: str, instructions: str) -> str:
         """Format recipe content in markdown format."""
         return (
             f"# {title}\n\n"

@@ -39,7 +39,7 @@ class GroceryUseCases:
             id=grocery_item_id,
             name=name if name is not None else existing_grocery_item.name,
             quantity=quantity if quantity is not None else existing_grocery_item.quantity,
-            is_completed=is_completed if is_completed is not None else existing_grocery_item.is_completed,
+            is_completed=(is_completed if is_completed is not None else existing_grocery_item.is_completed),
             created_at=existing_grocery_item.created_at,
             updated_at=existing_grocery_item.updated_at,
         )
