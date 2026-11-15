@@ -72,7 +72,7 @@ class GroceryItemListResponse(BaseModel):
 class RecipeDraftGenerateRequest(BaseModel):
     """Request schema for generating recipe drafts."""
 
-    prompt: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+    instruction: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
     max_drafts: int = 10
 
 
@@ -82,7 +82,7 @@ class RecipeDraftResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    user_prompt: str
+    user_instruction: str
     generated_content: dict[str, Any]
     status: str
     created_at: datetime

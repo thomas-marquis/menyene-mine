@@ -6,7 +6,7 @@ FastAPI REST API following hexagonal architecture.
 
 **Structure under `src`:**
 - `domain/` - Core business logic
-  - `entities/` - Business objects (e.g., `item.py`)
+  - `entities/` - Business objects (e.g., `item.py`) - MUST use dataclasses, NO external dependencies
   - `ports/` - Interfaces/abstract contracts (e.g., `item_repository.py`)
 - `infra/` - Infrastructure concerns
   - `db.py` - Async SQLAlchemy session factory
@@ -22,6 +22,12 @@ FastAPI REST API following hexagonal architecture.
 - `settings.py` - Pydantic Settings from `.env`
 - `shared/` - Utilities (MUST NOT have external dependencies)
   - `logging.py` - Logging setup
+- `resources/` - Static resources (at project root)
+  - `templates/` - Jinja2 templates for formatting output (not for AI prompts)
+
+**Structure under `tests`:**
+
+The `tests` folder mirrors the `src` structure for unit tests, and has a separate `integration` folder for integration tests.
 
 ## Key Files
 
@@ -81,6 +87,27 @@ uv run alembic upgrade head
 ## Quality
 
 Python 3.12, line-length 100, strict mypy. CI order: lint → format → typecheck → test.
+
+**Import Rules:**
+- **NEVER** import modules inside functions or methods
+- All imports MUST be placed at the top of the file
+- This ensures proper dependency management and static analysis
+
+**Coding Style:**
+- **ALWAYS** prefix internal (non-public) attributes and methods with underscore `_`
+- This includes instance variables, class variables, and helper methods that are not part of the public API
+- Example: `self._settings`, `self._llm`, `self._validate_input()`
+- Use clear and meaningful objects and methods names instead of comments, this ensure the code is readable and looks human-written
+- Place the exposed public API at the top of the class, and private methods below
+
+**Dependency Injection:**
+- **ALWAYS** make injected dependencies non-optional (no None default)
+- This ensures dependencies are always provided and eliminates the need for None checks
+- Only use optional dependencies when there's a true good reason (e.g., truly optional functionality)
+- Example: `def __init__(self, llm: BaseChatModel, settings: Settings)` not `def __init__(self, llm: BaseChatModel | None = None)`
+- **NEVER** inject the whole Settings object, only inject the specific values needed
+- This reduces coupling and makes dependencies explicit
+- Example: `def __init__(self, llm: BaseChatModel, max_retries: int = 3)` not `def __init__(self, llm: BaseChatModel, settings: Settings)`
 
 ## Database
 

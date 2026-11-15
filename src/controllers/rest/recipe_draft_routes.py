@@ -7,7 +7,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ...di import get_recipe_draft_use_cases, get_recipe_use_cases
-from ...domain.entities.recipe_draft import RecipeDraftStatus
+from ...domain.entities.recipe_draft import RecipeDraft, RecipeDraftStatus
 from ...use_cases.recipe_draft_use_cases import RecipeDraftUseCases
 from ...use_cases.recipe_use_cases import RecipeUseCases
 from .schemas import (
@@ -27,12 +27,10 @@ RecipeUseCasesDep = Annotated[RecipeUseCases, Depends(get_recipe_use_cases)]
 
 def _draft_entity_to_response(draft: Any) -> RecipeDraftResponse:
     """Convert domain RecipeDraft entity to RecipeDraftResponse schema."""
-    from ...domain.entities.recipe_draft import RecipeDraft
-
     if isinstance(draft, RecipeDraft):
         return RecipeDraftResponse(
             id=draft.id,
-            user_prompt=draft.user_prompt or "",
+            user_instruction=draft.user_instruction or "",
             generated_content=draft.generated_content or {},
             status=draft.status.value if draft.status else "draft",
             created_at=draft.created_at,
@@ -47,17 +45,17 @@ def _draft_entity_to_response(draft: Any) -> RecipeDraftResponse:
     "/generate",
     response_model=list[RecipeDraftResponse],
     status_code=status.HTTP_201_CREATED,
-    summary="Generate recipe drafts from a prompt",
+    summary="Generate recipe drafts from an instruction",
     description="Uses AI to generate recipe drafts based on user instructions",
 )
 async def generate_drafts_endpoint(
     request: RecipeDraftGenerateRequest,
     use_cases: RecipeDraftUseCasesDep,
 ) -> list[RecipeDraftResponse]:
-    """Generate recipe drafts from a user prompt."""
+    """Generate recipe drafts from a user instruction."""
     try:
         drafts = await use_cases.generate_drafts(
-            user_prompt=request.prompt,
+            user_instruction=request.instruction,
             max_drafts=request.max_drafts,
         )
         return [_draft_entity_to_response(d) for d in drafts]
@@ -78,9 +76,7 @@ async def list_drafts_endpoint(
     use_cases: RecipeDraftUseCasesDep,
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of items to return"),
-    status_filter: str | None = Query(
-        None, description="Filter by status: draft, validated, rejected"
-    ),
+    status_filter: str | None = Query(None, description="Filter by status: draft, validated, rejected"),
 ) -> RecipeDraftListResponse:
     """List all recipe drafts with optional filtering."""
     try:
@@ -92,10 +88,7 @@ async def list_drafts_endpoint(
             except ValueError as e:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=(
-                        f"Invalid status: {status_filter}. "
-                        "Must be one of: draft, validated, rejected"
-                    ),
+                    detail=(f"Invalid status: {status_filter}. Must be one of: draft, validated, rejected"),
                 ) from e
 
         drafts = await use_cases.list_drafts(skip=skip, limit=limit, status=status_enum)

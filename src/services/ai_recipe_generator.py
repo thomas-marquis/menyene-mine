@@ -1,200 +1,234 @@
 """
 AI Recipe Generator Service Implementation
 
-This service uses LangChain with Mistral to generate recipes from user prompts.
-For testing purposes, a mock generator is also provided.
+This service uses LangChain with Mistral to generate recipes from user instructions.
+Templates are loaded from the config directory.
 """
 
-from typing import Any
-
-from langchain.messages import AIMessage
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_core.output_parsers import StrOutputParser
-from langchain_mistralai import ChatMistralAI
+from langgraph.graph import END, START, StateGraph
+from pydantic import BaseModel
 
-from ..domain.ports.ai_recipe_generator import AIRecipeGeneratorPort
-from ..settings import Settings, get_settings
+from ..config import get_prompt_loader, get_static_template_loader
+from ..domain.entities.recipe import Recipe as RecipeEntity
+from ..domain.exceptions import RecipeGenerationError
+from .recipe_generator import RecipeGenerator
+from .recipe_models import GeneratedRecipe
 
 
-class RecipeAIGenerator(AIRecipeGeneratorPort):
+class RecipeGenerationState(BaseModel):
+    """State for the recipe generation retry workflow."""
+
+    instruction: str
+    attempts: int = 0
+    max_attempts: int = 3
+    error: str | None = None
+    recipe: GeneratedRecipe | None = None
+
+
+class RecipeAIGenerator(RecipeGenerator):
     """
     Production AI recipe generator service.
 
-    Uses LangChain with Mistral to generate recipes.
+    Uses LangChain with Mistral to generate recipes from Jinja2 templates.
+    Implements a retry mechanism with LangGraph for robust generation.
     """
 
     def __init__(
         self,
-        settings: Settings | None = None,
-        model: str | None = None,
-        max_recipes: int | None = None,
+        llm: BaseChatModel,
+        max_attempts: int = 3,
     ):
         """
         Initialize the AI recipe generator.
 
         Args:
-            settings: Application settings (uses global settings if None)
-            model: Model to use for generation (overrides settings)
-            max_recipes: Maximum number of recipes to generate (overrides settings)
+            llm: The LLM instance to use
+            max_attempts: Maximum number of generation attempts before failing
         """
-        self._settings = settings or get_settings()
-        self._model = model or self._settings.ai_model
-        self._max_recipes = max_recipes or self._settings.ai_max_drafts
-        self._llm = ChatMistralAI(
-            api_key=self._settings.mistral_api_key,
-            model=self._model,
-            temperature=0.7,
-            max_tokens=2000,
-        )
+        self._llm = llm
+        self._max_attempts = max_attempts
 
-    async def generate_recipes(self, prompt: str, max_recipes: int | None = None) -> list[dict[str, Any]]:
+        # Load templates in constructor
+        prompt_loader = get_prompt_loader()
+        self._system_template = prompt_loader.load("system")
+        self._generation_template = prompt_loader.load("recipe_generation")
+        self._instruction_validation_template = prompt_loader.load("instruction_validation")
+
+        static_template_loader = get_static_template_loader()
+        self._recipe_format_template = static_template_loader.load("recipe_format")
+
+        self._build_generator_workflow()
+
+    async def generate_recipe(self, instruction: str) -> RecipeEntity:
         """
-        Generate recipe drafts from a user prompt.
+        Generate a single recipe draft from a user instruction.
 
         Args:
-            prompt: User instruction for recipe generation
-            max_recipes: Maximum number of recipes to generate (overrides instance default)
+            instruction: User instruction for recipe generation
 
         Returns:
-            List of recipe dictionaries with title, content, summary, etc.
-        """
-        num_recipes = max_recipes if max_recipes is not None else self._max_recipes
-        return await self._generate_with_ai(prompt, num_recipes)
+            Recipe domain entity with title, content, summary, etc.
 
-    async def _generate_with_ai(self, prompt: str, num_recipes: int) -> list[dict[str, Any]]:
-        """
-        Generate recipes using actual AI (LangChain/LangGraph with Mistral).
-
-        Uses LangChain's ChatMistralAI to generate recipe ideas from user prompts.
-        Returns structured recipe data with title, content, summary, etc.
+        Raises:
+            RecipeGenerationError: If recipe generation fails after all retry attempts
         """
 
-        output_parser = StrOutputParser()
-        system_prompt = self._get_system_prompt()
-        human_prompt = f"Generate {num_recipes} recipe(s) based on: {prompt}"
-        messages: list[BaseMessage] = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=human_prompt),
-        ]
+        initial_state = RecipeGenerationState(
+            instruction=instruction,
+            max_attempts=self._max_attempts,
+        )
 
-        response: AIMessage = await self._llm.ainvoke(messages)
-        parsed_response = output_parser.parse(response.content)
+        final_state_dict = await self._workflow.ainvoke(initial_state)
 
-        return self._parse_ai_response(parsed_response, num_recipes)
+        final_state = RecipeGenerationState(**final_state_dict)
 
-    def _get_system_prompt(self) -> str:
-        """Get the system prompt for recipe generation."""
-        return """You are an expert chef and recipe creator.
-Your task is to generate detailed, practical, and delicious recipes based on user requests.
+        if final_state.recipe is not None:
+            return self._to_domain_entity(final_state.recipe)
+        else:
+            error_msg = final_state.error or "Failed to generate recipe after multiple attempts"
+            raise RecipeGenerationError(error_msg) from None
 
-For each recipe, provide:
-1. A clear, descriptive title
-2. A brief summary (1-2 sentences)
-3. A list of ingredients with quantities
-4. Step-by-step instructions
-5. Estimated servings, prep time, and cook time
-6. Difficulty level (Easy, Medium, Hard)
-
-Format each recipe as a JSON object with the following structure:
-{
-    "title": "Recipe Title",
-    "summary": "Brief description of the recipe",
-    "content": "Full recipe in markdown format with headers, ingredients, and instructions",
-    "ingredients": ["list", "of", "ingredients"],
-    "instructions": ["step 1", "step 2", "..."],
-    "servings": 4,
-    "prep_time": "20 minutes",
-    "cook_time": "30 minutes",
-    "difficulty": "Medium"
-}
-
-Return ONLY a JSON array of recipe objects, no other text.
-
-Remember:
-- Be creative but practical
-- Use realistic ingredient quantities
-- Include clear, actionable instructions
-- Consider dietary restrictions if mentioned in the prompt
-- Always provide complete, usable recipes"""
-
-    def _parse_ai_response(self, response: str, num_recipes: int) -> list[dict[str, Any]]:
+    def _to_domain_entity(self, recipe: GeneratedRecipe) -> RecipeEntity:
         """
-        Parse the AI response into structured recipe data.
+        Convert a Pydantic GeneratedRecipe model to a Recipe domain entity.
 
-        Handles both single recipe and multiple recipes responses.
+        Args:
+            recipe: Pydantic GeneratedRecipe model
+
+        Returns:
+            Recipe domain entity with formatted content
         """
-        import json
 
-        # Clean up the response
-        response = response.strip()
+        content = self._format_recipe_content(recipe)
 
-        # Try to parse as JSON array first
+        return RecipeEntity(
+            title=recipe.title,
+            summary=recipe.summary,
+            content=content,
+        )
+
+    def _format_recipe_content(self, recipe: GeneratedRecipe) -> str:
+        """
+        Format recipe content using the Jinja template.
+
+        Args:
+            recipe: Pydantic GeneratedRecipe model
+
+        Returns:
+            Formatted recipe content as markdown string
+        """
+        return self._recipe_format_template.render(
+            title=recipe.title,
+            summary=recipe.summary,
+            ingredients=recipe.ingredients,
+            instructions=recipe.instructions,
+            servings=recipe.servings,
+            prep_time=recipe.prep_time,
+            cook_time=recipe.cook_time,
+            difficulty=recipe.difficulty,
+        )
+
+    def _build_generator_workflow(self) -> None:
+        """Build the LangGraph retry workflow for recipe generation."""
+
+        builder = StateGraph(RecipeGenerationState)
+
+        builder.add_node("generate", self._generate_node)
+        builder.add_node("validate", self._validate_node)
+
+        builder.add_edge(START, "generate")
+        builder.add_edge("generate", "validate")
+
+        builder.add_conditional_edges(
+            "validate",
+            self._should_retry,
+            {
+                "retry": "generate",
+                "success": END,
+                "failure": END,
+            },
+        )
+
+        self._workflow = builder.compile()
+
+    async def _generate_node(self, state: RecipeGenerationState) -> RecipeGenerationState:
+        """
+        Generate a recipe using AI.
+
+        Args:
+            state: Current workflow state
+
+        Returns:
+            Updated state with generated recipe or error
+        """
+
         try:
-            recipes = json.loads(response)
-            if isinstance(recipes, list):
-                # Validate and normalize each recipe
-                return [self._normalize_recipe(r) for r in recipes[:num_recipes]]
-            elif isinstance(recipes, dict):
-                # Single recipe, wrap in list
-                return [self._normalize_recipe(recipes)]
-        except json.JSONDecodeError:
-            pass
+            system_prompt = self._system_template.render()
+            generation_prompt = self._generation_template.render(instruction=state.instruction, num_recipes=1)
 
-        # Try to extract JSON from markdown or other formatting
-        try:
-            import re
+            messages: list[BaseMessage] = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=generation_prompt),
+            ]
 
-            # Look for JSON array
-            array_match = re.search(r"\[.*\]", response, re.DOTALL)
-            if array_match:
-                recipes = json.loads(array_match.group(0))
-                return [self._normalize_recipe(r) for r in recipes[:num_recipes]]
+            llm_with_structured_output = self._llm.with_structured_output(GeneratedRecipe)
 
-            # Look for single JSON object
-            json_match = re.search(r"\{[^{}]*\}", response, re.DOTALL)
-            if json_match:
-                recipe = json.loads(json_match.group(0))
-                return [self._normalize_recipe(recipe)]
-        except (json.JSONDecodeError, AttributeError):
-            pass
+            response = await llm_with_structured_output.ainvoke(messages)
+            recipe: GeneratedRecipe = response  # type: ignore[assignment]
 
-        # If all parsing fails, return empty list
-        # The caller should handle this case appropriately
-        return []
+            return RecipeGenerationState(
+                instruction=state.instruction,
+                attempts=state.attempts + 1,
+                max_attempts=state.max_attempts,
+                error=None,
+                recipe=recipe,
+            )
+        except Exception as e:
+            return RecipeGenerationState(
+                instruction=state.instruction,
+                attempts=state.attempts + 1,
+                max_attempts=state.max_attempts,
+                error=str(e),
+                recipe=None,
+            )
 
-    def _normalize_recipe(self, recipe: dict[str, Any]) -> dict[str, Any]:
+    def _validate_node(self, state: RecipeGenerationState) -> RecipeGenerationState:
         """
-        Normalize a recipe dictionary to ensure all required fields are present.
+        Validate the generated recipe.
+
+        Args:
+            state: Current workflow state
+
+        Returns:
+            Updated state with validation result
         """
-        # Ensure all required fields are present with defaults
-        normalized = {
-            "title": str(recipe.get("title", "Untitled Recipe")),
-            "summary": str(recipe.get("summary", "A delicious recipe")),
-            "content": str(
-                recipe.get(
-                    "content",
-                    f"# {recipe.get('title', 'Untitled Recipe')}\n\n"
-                    f"## Summary\n{recipe.get('summary', 'A delicious recipe')}\n\n"
-                    f"## Ingredients\n"
-                    f"\n".join(recipe.get("ingredients", [])),
-                )
-            ),
-            "ingredients": recipe.get("ingredients", []),
-            "instructions": recipe.get("instructions", []),
-            "servings": int(recipe.get("servings", 4)),
-            "prep_time": str(recipe.get("prep_time", "20 minutes")),
-            "cook_time": str(recipe.get("cook_time", "30 minutes")),
-            "difficulty": str(recipe.get("difficulty", "Medium")),
-        }
+        if state.recipe is not None:
+            return state
+        else:
+            return RecipeGenerationState(
+                instruction=state.instruction,
+                attempts=state.attempts,
+                max_attempts=state.max_attempts,
+                error=state.error or "No recipe generated",
+                recipe=None,
+            )
 
-        # Ensure ingredients and instructions are lists of strings
-        if not isinstance(normalized["ingredients"], list):
-            normalized["ingredients"] = [str(normalized["ingredients"])]
-        if not isinstance(normalized["instructions"], list):
-            normalized["instructions"] = [str(normalized["instructions"])]
+    def _should_retry(self, state: RecipeGenerationState) -> str:
+        """
+        Determine if we should retry generation.
 
-        # Ensure all list items are strings
-        normalized["ingredients"] = [str(ing) for ing in normalized["ingredients"]]
-        normalized["instructions"] = [str(inst) for inst in normalized["instructions"]]
+        Args:
+            state: Current workflow state
 
-        return normalized
+        Returns:
+            "retry" if we should try again, "success" if successful,
+            "failure" if max attempts reached
+        """
+        if state.recipe is not None:
+            return "success"
+        elif state.attempts >= state.max_attempts:
+            return "failure"
+        else:
+            return "retry"

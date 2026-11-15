@@ -34,6 +34,17 @@ coverage
 tmp
 temp
 /*.db
+
+# Configuration - keep directory structure but ignore .env files
+config/**/.env
+config/**/.env.*
+!config/**/.env.example
+
+# Also ignore .env in root if it exists
+.env
+.env.*
+!.env.example
+
 /_bmad*
 /.agents
 /skills-lock.json

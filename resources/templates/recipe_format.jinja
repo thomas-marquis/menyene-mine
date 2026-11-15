@@ -1,0 +1,18 @@
+# {{ title }}
+
+## Summary
+{{ summary }}
+
+## Ingredients
+{% for ingredient in ingredients %}- {{ ingredient }}
+{% endfor %}
+
+## Instructions
+{% for instruction in instructions %}{{ loop.index }}. {{ instruction }}
+{% endfor %}
+
+## Details
+- **Servings:** {{ servings }}
+- **Prep Time:** {{ prep_time }}
+- **Cook Time:** {{ cook_time }}
+- **Difficulty:** {{ difficulty }}

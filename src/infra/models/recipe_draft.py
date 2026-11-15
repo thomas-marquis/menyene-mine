@@ -23,7 +23,7 @@ class RecipeDraft(Base):
     __tablename__ = "recipe_drafts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_prompt: Mapped[str] = mapped_column(String(1000), nullable=False)
+    user_instruction: Mapped[str] = mapped_column(String(1000), nullable=False)
     generated_content: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     status: Mapped[str] = mapped_column(
         SQLEnum(RecipeDraftStatus), default=RecipeDraftStatus.DRAFT, nullable=False

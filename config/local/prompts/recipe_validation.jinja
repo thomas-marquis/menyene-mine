@@ -1,0 +1,38 @@
+{# Prompt for validating generated recipes #}
+You are a recipe quality validator. Your task is to check if a generated recipe meets quality standards.
+
+Original user prompt: "{{ original_prompt }}"
+
+Generated recipe:
+{{ recipe|tojson|indent(2) }}
+
+Required fields:
+- title: Clear and descriptive (string, non-empty)
+- summary: Brief description (string, non-empty)
+- content: Full recipe in markdown (string, non-empty)
+- ingredients: List of at least 3 ingredients (array of strings)
+- instructions: Step-by-step instructions with at least 3 steps (array of strings)
+- servings: Number of servings (integer)
+- prep_time: Preparation time (string, non-empty)
+- cook_time: Cooking time (string, non-empty)
+- difficulty: Difficulty level (string: Easy, Medium, or Hard)
+
+Quality criteria:
+1. All required fields must be present and non-empty
+2. Ingredients list must have at least {{ min_ingredients|default(3) }} items
+3. Instructions must have at least {{ min_instructions|default(3) }} steps
+4. The recipe must logically match the user's prompt intent
+5. The recipe must be practical and usable
+6. Ingredients and instructions must be coherent with each other
+
+{%- if strict_mode %}
+Be very strict. Reject if any criteria are not met.
+{%- else %}
+Be reasonably strict but allow minor imperfections.
+{%- endif %}
+
+Respond with one of the following:
+- If VALID: "{"status": "valid", "reason": "Recipe meets all quality criteria"}"
+- If INVALID: "{"status": "invalid", "reason": "[brief explanation of what's wrong]", "missing_fields": ["list", "of", "missing", "fields"], "issues": ["list", "of", "specific", "issues"]}"
+
+Provide your response as valid JSON only, no other text.

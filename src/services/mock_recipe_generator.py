@@ -1,56 +1,43 @@
-from typing import Any
+"""
+Mock Recipe Generator for testing.
 
-from ..domain.ports.ai_recipe_generator import AIRecipeGeneratorPort
+This implementation provides mock recipe generation without requiring
+an AI API key. It's used when AI is disabled in the configuration.
+"""
+
+import random
+
+from ..domain.entities.recipe import Recipe as RecipeEntity
+from .recipe_generator import RecipeGenerator
 
 
-class MockRecipeAIGenerator(AIRecipeGeneratorPort):
+class MockRecipeAIGenerator(RecipeGenerator):
     """
-    Mock implementation of AI recipe generator for testing.
+    Mock implementation of recipe generator for testing.
 
     Always uses mock generation regardless of settings.
     """
 
-    def __init__(self, max_recipes: int = 10):
-        """
-        Initialize the mock AI recipe generator.
-
-        Args:
-            max_recipes: Maximum number of recipes to generate
-        """
-        import random
-
-        self.max_recipes = max_recipes
+    def __init__(self) -> None:
+        """Initialize the mock recipe generator."""
         self._random = random
 
-    async def generate_recipes(self, prompt: str, max_recipes: int | None = None) -> list[dict[str, Any]]:
+    async def generate_recipe(self, instruction: str) -> RecipeEntity:
         """
-        Generate mock recipe drafts from a user prompt.
+        Generate a single mock recipe draft from a user instruction.
 
         Args:
-            prompt: User instruction for recipe generation
-            max_recipes: Maximum number of recipes to generate
+            instruction: User instruction for recipe generation
 
         Returns:
-            List of mock recipe dictionaries
+            Mock Recipe domain entity
         """
-        num_recipes = max_recipes if max_recipes is not None else self.max_recipes
-        return await self._generate_mock_recipes(prompt, num_recipes)
+        return self._create_mock_recipe(instruction, 1)
 
-    async def _generate_mock_recipes(self, prompt: str, num_recipes: int) -> list[dict[str, Any]]:
-        """Generate mock recipes for testing without API key."""
-        # Extract keywords from prompt for more relevant mocks
-        keywords = [word.lower() for word in prompt.split() if len(word) > 3]
-
-        recipes = []
-        for i in range(min(num_recipes, self.max_recipes)):
-            recipe = self._create_mock_recipe(prompt, keywords, i + 1)
-            recipes.append(recipe)
-
-        return recipes
-
-    def _create_mock_recipe(self, prompt: str, keywords: list[str], index: int) -> dict[str, Any]:
-        """Create a single mock recipe."""
-        # Select a main keyword for the recipe
+    def _create_mock_recipe(self, instruction: str, index: int) -> RecipeEntity:
+        """Create a single mock recipe as a domain entity."""
+        # Extract keywords from instruction for more relevant mocks
+        keywords = [word.lower() for word in instruction.split() if len(word) > 3]
         main_keyword = keywords[0] if keywords else "delicious"
 
         # Generate a title
@@ -64,7 +51,10 @@ class MockRecipeAIGenerator(AIRecipeGeneratorPort):
             "Spicy",
         ]
         nouns = ["Recipe", "Dish", "Meal", "Creation", "Delight", "Specialty"]
-        title = f"{self._random.choice(adjectives)} {main_keyword.capitalize()} {self._random.choice(nouns)}"
+        title = (
+            f"{self._random.choice(adjectives)} {main_keyword.capitalize()} "
+            f"{self._random.choice(nouns)}"
+        )
 
         # Generate ingredients
         ingredients = self._generate_mock_ingredients(main_keyword)
@@ -81,7 +71,21 @@ class MockRecipeAIGenerator(AIRecipeGeneratorPort):
         )
 
         # Generate content (full recipe in markdown format)
-        content = (
+        content = self._format_recipe_content(
+            title, summary, ingredients, instructions
+        )
+
+        return RecipeEntity(
+            title=title,
+            summary=summary,
+            content=content,
+        )
+
+    def _format_recipe_content(
+        self, title: str, summary: str, ingredients: str, instructions: str
+    ) -> str:
+        """Format recipe content in markdown format."""
+        return (
             f"# {title}\n\n"
             f"## Summary\n"
             f"{summary}\n\n"
@@ -94,18 +98,6 @@ class MockRecipeAIGenerator(AIRecipeGeneratorPort):
             f"- Adjust seasoning to taste\n"
             f"- Serve warm for best results"
         )
-
-        return {
-            "title": title,
-            "content": content,
-            "summary": summary,
-            "ingredients": ingredients.split("\n"),
-            "instructions": instructions.split("\n"),
-            "servings": self._random.randint(2, 6),
-            "prep_time": f"{self._random.randint(10, 45)} minutes",
-            "cook_time": f"{self._random.randint(15, 60)} minutes",
-            "difficulty": self._random.choice(["Easy", "Medium", "Hard"]),
-        }
 
     def _generate_mock_ingredients(self, keyword: str) -> str:
         """Generate mock ingredients list."""
