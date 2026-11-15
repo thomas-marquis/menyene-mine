@@ -13,6 +13,11 @@
   gap: 1rem;
 }
 
+.headerButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .title {
   font-size: 2rem;
   font-weight: 600;

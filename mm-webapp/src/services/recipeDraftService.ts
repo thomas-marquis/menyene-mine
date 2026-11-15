@@ -6,7 +6,6 @@ import type {
   GenerateDraftRequest,
   RecipeDraftActionResponse,
 } from '../types/recipe_draft.types';
-import type { Recipe } from '../types/recipe.types';
 
 const RECIPE_DRAFTS_BASE_URL = '/api/v1/recipe-drafts';
 

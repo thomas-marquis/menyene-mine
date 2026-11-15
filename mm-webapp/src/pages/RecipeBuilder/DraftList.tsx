@@ -107,16 +107,7 @@ export const DraftListPage = () => {
     safeCurrentPage * ITEMS_PER_PAGE
   );
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'validated':
-        return <span className="badge bg-success">Validated</span>;
-      case 'rejected':
-        return <span className="badge bg-danger">Rejected</span>;
-      default:
-        return <span className="badge bg-warning text-dark">Draft</span>;
-    }
-  };
+
 
   if (loading && drafts.length === 0) {
     return (
@@ -133,7 +124,7 @@ export const DraftListPage = () => {
     return (
       <div className={styles.errorContainer}>
         <div className="alert alert-danger" role="alert">
-          {error}
+          <strong>Error:</strong> {error}
         </div>
         <Button onClick={() => fetchDrafts()} variant="primary">
           Retry

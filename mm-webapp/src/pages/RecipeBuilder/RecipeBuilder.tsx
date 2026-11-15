@@ -8,31 +8,26 @@ import styles from './RecipeBuilder.module.css';
 
 export const RecipeBuilderPage = () => {
   const navigate = useNavigate();
-  const [prompt, setPrompt] = useState('');
+  const [instruction, setInstruction] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [drafts, setDrafts] = useState<RecipeDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [maxDrafts, setMaxDrafts] = useState(3);
+  const maxDrafts = 1;
 
-  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setPrompt(e.target.value);
+  const handleInstructionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInstruction(e.target.value);
     setError(null);
   };
 
-  const handleMaxDraftsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value) && value >= 1 && value <= 10) {
-      setMaxDrafts(value);
-    }
-  };
+
 
   const handleGenerate = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       
-      if (!prompt.trim()) {
-        setError('Please enter a prompt to generate recipes');
+      if (!instruction.trim()) {
+        setError('Please enter an instruction to generate a recipe');
         return;
       }
 
@@ -43,13 +38,13 @@ export const RecipeBuilderPage = () => {
         setDrafts([]);
 
         const newDrafts = await recipeDraftService.generateDrafts({
-          prompt: prompt.trim(),
-          max_drafts: maxDrafts,
+          instruction: instruction.trim(),
+          max_drafts: 1,
         });
 
         setDrafts(newDrafts);
-        setSuccessMessage(`Generated ${newDrafts.length} recipe draft(s)!`);
-        setPrompt('');
+        setSuccessMessage('Recipe draft generated successfully!');
+        setInstruction('');
       } catch (err: any) {
         if (err.response) {
           setError(err.response.data?.detail || 'Failed to generate recipes. Please try again.');
@@ -63,7 +58,7 @@ export const RecipeBuilderPage = () => {
         setIsGenerating(false);
       }
     },
-    [prompt, maxDrafts]
+    [instruction]
   );
 
   const handleViewAllDrafts = () => {
@@ -72,6 +67,10 @@ export const RecipeBuilderPage = () => {
 
   const handleViewDraft = (draftId: number) => {
     navigate(`/recipes/drafts/${draftId}`);
+  };
+
+  const handleGoBack = () => {
+    navigate('/');
   };
 
   const examplePrompts = [
@@ -86,20 +85,58 @@ export const RecipeBuilderPage = () => {
   ];
 
   const handleUseExample = (example: string) => {
-    setPrompt(example);
+    setInstruction(example);
     setError(null);
   };
+
+  // Show loading state if we're waiting for the first generation
+  if (isGenerating && drafts.length === 0 && !error && !successMessage) {
+    return (
+      <div className={styles.builderContainer}>
+        <div className={styles.header}>
+          <Button onClick={handleGoBack} variant="outline" size="medium" disabled={true}>
+            <i className="bi bi-arrow-left me-2"></i>
+            Back to Recipes
+          </Button>
+          
+          <div className={styles.headerContent}>
+            <h1 className={styles.title}>
+              <i className="bi bi-robot me-3"></i>
+              AI Recipe Builder
+            </h1>
+            <p className={styles.subtitle}>
+              Describe what you want to cook, and our AI will generate recipe ideas for you!
+            </p>
+          </div>
+        </div>
+        
+        <div className={styles.loadingContainer}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Generating...</span>
+          </div>
+          <p className="mt-2">Generating your recipes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.builderContainer}>
       <div className={styles.header}>
-        <h1 className={styles.title}>
-          <i className="bi bi-robot me-3"></i>
-          AI Recipe Builder
-        </h1>
-        <p className={styles.subtitle}>
-          Describe what you want to cook, and our AI will generate recipe ideas for you!
-        </p>
+        <Button onClick={handleGoBack} variant="outline" size="medium" disabled={isGenerating}>
+          <i className="bi bi-arrow-left me-2"></i>
+          Back to Recipes
+        </Button>
+        
+        <div className={styles.headerContent}>
+          <h1 className={styles.title}>
+            <i className="bi bi-robot me-3"></i>
+            AI Recipe Builder
+          </h1>
+          <p className={styles.subtitle}>
+            Describe what you want to cook, and our AI will generate recipe ideas for you!
+          </p>
+        </div>
       </div>
 
       {successMessage && (
@@ -110,22 +147,22 @@ export const RecipeBuilderPage = () => {
 
       {error && (
         <div className="alert alert-danger" role="alert">
-          {error}
+          <strong>Error:</strong> {error}
         </div>
       )}
 
       <div className={styles.generatorForm}>
         <form onSubmit={handleGenerate}>
           <div className="mb-3">
-            <label htmlFor="prompt" className="form-label">
+            <label htmlFor="instruction" className="form-label">
               <strong>Describe your recipe idea:</strong>
             </label>
             <textarea
-              id="prompt"
+              id="instruction"
               className="form-control"
               rows={4}
-              value={prompt}
-              onChange={handlePromptChange}
+              value={instruction}
+              onChange={handleInstructionChange}
               placeholder="e.g., Create a quick vegetarian pasta dish with tomatoes and basil..."
               disabled={isGenerating}
             />
@@ -134,32 +171,18 @@ export const RecipeBuilderPage = () => {
             </div>
           </div>
 
-          <div className="mb-3">
-            <label htmlFor="maxDrafts" className="form-label">
-              Number of recipes to generate (1-10):
-            </label>
-            <input
-              type="number"
-              id="maxDrafts"
-              className="form-control"
-              min={1}
-              max={10}
-              value={maxDrafts}
-              onChange={handleMaxDraftsChange}
-              disabled={isGenerating}
-            />
-          </div>
+
 
           <div className={styles.buttonGroup}>
             <Button
               type="submit"
               variant="primary"
               size="large"
-              disabled={isGenerating || !prompt.trim()}
+              disabled={isGenerating || !instruction.trim()}
               loading={isGenerating}
             >
               <i className="bi bi-magic me-2"></i>
-              {isGenerating ? 'Generating...' : 'Generate Recipes'}
+              {isGenerating ? 'Generating...' : 'Generate Recipe'}
             </Button>
 
             <Button

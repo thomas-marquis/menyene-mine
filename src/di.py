@@ -11,6 +11,7 @@ from fastapi import Depends
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_mistralai import ChatMistralAI
 
+from .config import get_settings
 from .domain.ports.grocery_repository import GroceryRepositoryPort
 from .domain.ports.recipe_draft_repository import RecipeDraftRepositoryPort
 from .domain.ports.recipe_repository import RecipeRepositoryPort
@@ -21,7 +22,6 @@ from .infra.repositories.recipe_repository import RecipeRepositoryImpl
 from .services import MockRecipeAIGenerator, RecipeAIGenerator
 from .services.judge import Judge, LLMJudge, MockJudge
 from .services.recipe_generator import RecipeGenerator
-from .settings import get_settings
 from .use_cases.grocery_use_cases import GroceryUseCases
 from .use_cases.recipe_draft_use_cases import RecipeDraftUseCases
 from .use_cases.recipe_generation_workflow import RecipeGenerationWorkflow
@@ -56,7 +56,7 @@ def get_llm() -> BaseChatModel:
             raise RuntimeError("LLM init failed. Please provide a Mistral API key.")
 
         llm = ChatMistralAI(
-            api_key=settings.mistral_api_key,
+            mistral_api_key=settings.mistral_api_key,
             model=settings.ai_model,
             temperature=settings.ai_temperature,
             max_tokens=2000,

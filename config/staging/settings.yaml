@@ -1,0 +1,20 @@
+app:
+  name: menyene-mine
+  debug: true
+  cors_origins: "https://staging.menyene-mine.com,https://staging-api.menyene-mine.com"
+
+database:
+  url: $DATABASE_URL
+
+ai:
+  enabled: true
+  model: mistral-medium
+  max_drafts: 2
+  temperature: 0.6
+  api_key: $MISTRAL_API_KEY
+
+judge:
+  enabled: true
+  model: $JUDGE_MODEL
+  temperature: 0.1
+  max_tokens: 5000

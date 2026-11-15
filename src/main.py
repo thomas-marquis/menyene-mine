@@ -3,13 +3,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from .config import get_settings
 from .controllers.rest.exceptions import register_exception_handlers
 from .controllers.rest.grocery_routes import router as groceries_router
 from .controllers.rest.middlewares import add_middleware
 from .controllers.rest.recipe_draft_routes import router as recipe_drafts_router
 from .controllers.rest.recipe_routes import router as recipes_router
 from .infra.db import close_db
-from .settings import get_settings
 
 settings = get_settings()
 

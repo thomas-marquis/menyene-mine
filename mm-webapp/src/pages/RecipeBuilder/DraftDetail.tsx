@@ -4,7 +4,6 @@ import { Button } from '../../components/common/Button/Button';
 import { recipeDraftService } from '../../services/recipeDraftService';
 import { recipeService } from '../../services/recipeService';
 import type { RecipeDraft } from '../../types/recipe_draft.types';
-import type { Recipe } from '../../types/recipe.types';
 import styles from './DraftDetail.module.css';
 
 export const DraftDetailPage = () => {
@@ -243,7 +242,7 @@ export const DraftDetailPage = () => {
     return (
       <div className={styles.errorContainer}>
         <div className="alert alert-danger" role="alert">
-          {error}
+          <strong>Error:</strong> {error}
         </div>
         <div className={styles.errorActions}>
           <Button onClick={() => fetchDraft()} variant="primary" disabled={loading}>
@@ -292,7 +291,7 @@ export const DraftDetailPage = () => {
               </Button>
               <Button
                 onClick={() => setShowConfirmValidate(true)}
-                variant="success"
+                variant="primary"
                 size="medium"
                 className="ms-2"
                 disabled={isValidating || isRejecting}
@@ -362,7 +361,7 @@ export const DraftDetailPage = () => {
       <div className={styles.promptSection}>
         <h3>User Prompt</h3>
         <div className={styles.promptContent}>
-          <p>{draft.user_prompt}</p>
+          <p>{draft.user_instruction}</p>
         </div>
       </div>
 
@@ -398,7 +397,7 @@ export const DraftDetailPage = () => {
                 </Button>
                 <Button
                   onClick={handleValidate}
-                  variant="success"
+                  variant="primary"
                   className="ms-2"
                   loading={isValidating}
                   disabled={isValidating}

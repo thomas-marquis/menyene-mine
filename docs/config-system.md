@@ -211,7 +211,7 @@ prompt_loader = get_prompt_loader()
 Application settings are managed through Pydantic's `BaseSettings` with automatic environment variable loading:
 
 ```python
-from src.settings import Settings, get_settings
+from src.config import Settings, get_settings
 
 # Get settings (cached)
 settings = get_settings()
@@ -222,7 +222,7 @@ print(settings.mistral_api_key)
 print(settings.judge_enabled)
 
 # Reset settings cache (for testing)
-from src.settings import reset_settings
+from src.config import reset_settings
 
 reset_settings()
 ```

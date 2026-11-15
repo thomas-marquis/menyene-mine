@@ -1210,7 +1210,10 @@ dependencies = [
     { name = "langchain-mistralai" },
     { name = "langgraph" },
     { name = "mistralai" },
+    { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -1238,7 +1241,10 @@ requires-dist = [
     { name = "langchain-mistralai", specifier = ">=1.1.6" },
     { name = "langgraph", specifier = ">=0.2.0" },
     { name = "mistralai", specifier = ">=1.0.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pydantic-settings" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "sqlalchemy", extras = ["asyncio"] },
     { name = "uvicorn", extras = ["standard"] },
 ]

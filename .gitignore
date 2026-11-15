@@ -50,3 +50,4 @@ config/**/.env.*
 /skills-lock.json
 /bin
 /.coverage
+/.vscode

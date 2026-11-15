@@ -166,7 +166,7 @@ class RecipeAIGenerator(RecipeGenerator):
 
         try:
             system_prompt = self._system_template.render()
-            generation_prompt = self._generation_template.render(instruction=state.instruction, num_recipes=1)
+            generation_prompt = self._generation_template.render(instruction=state.instruction)
 
             messages: list[BaseMessage] = [
                 SystemMessage(content=system_prompt),

@@ -9,12 +9,11 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from ..config import get_prompt_loader
+from ..config import Settings, get_prompt_loader, get_settings
 from ..domain.entities.recipe import Recipe
 from ..domain.exceptions import DomainException, InvalidInstructionError
 from ..services.judge import Judge
 from ..services.recipe_generator import RecipeGenerator
-from ..settings import Settings, get_settings
 
 
 class RecipeGenerationState(TypedDict, total=False):

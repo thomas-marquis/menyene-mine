@@ -6,6 +6,7 @@ import { NotFoundPage } from '../pages/NotFound/NotFound';
 import { RecipeBuilderPage } from '../pages/RecipeBuilder/RecipeBuilder';
 import { DraftListPage } from '../pages/RecipeBuilder/DraftList';
 import { DraftDetailPage } from '../pages/RecipeBuilder/DraftDetail';
+import { RecipeGeneratorPage } from '../pages/RecipeGenerator/RecipeGenerator';
 
 export const AppRoutes = () => {
   return (
@@ -13,6 +14,7 @@ export const AppRoutes = () => {
       {/* Public routes */}
       <Route path="/" element={<RecipeListPage />} />
       <Route path="/recipes/:id" element={<RecipeDetailPage />} />
+      <Route path="/recipes/generate" element={<RecipeGeneratorPage />} />
       <Route path="/recipes/builder" element={<RecipeBuilderPage />} />
       <Route path="/recipes/drafts" element={<DraftListPage />} />
       <Route path="/recipes/drafts/:id" element={<DraftDetailPage />} />

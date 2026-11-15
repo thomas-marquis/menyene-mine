@@ -88,9 +88,9 @@ export const RecipeDraftCard = ({
       <div className={styles.cardFooter}>
         <span className={styles.promptPreview}>
           <i className="bi bi-chat-left-quote me-1"></i>
-          {draft.user_prompt.length > 50 
-            ? `${draft.user_prompt.substring(0, 50)}...` 
-            : draft.user_prompt}
+          {draft.user_instruction.length > 50 
+            ? `${draft.user_instruction.substring(0, 50)}...` 
+            : draft.user_instruction}
         </span>
         
         <div className={styles.viewIndicator}>

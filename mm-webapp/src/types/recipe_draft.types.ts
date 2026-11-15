@@ -1,6 +1,6 @@
 export interface RecipeDraft {
   id: number;
-  user_prompt: string;
+  user_instruction: string;
   generated_content: RecipeDraftContent;
   status: RecipeDraftStatus;
   created_at: string;
@@ -38,7 +38,7 @@ export interface RecipeDraftStats {
 }
 
 export interface GenerateDraftRequest {
-  prompt: string;
+  instruction: string;
   max_drafts?: number;
 }
 

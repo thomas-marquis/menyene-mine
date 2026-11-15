@@ -1,0 +1,1 @@
+export { RecipeGeneratorPage } from './RecipeGenerator';

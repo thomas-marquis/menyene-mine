@@ -18,7 +18,7 @@ class Judge(ABC):
     """Abstract base class for judge services."""
 
     @abstractmethod
-    async def validate_instruction(self, instruction: str, strict: bool = True) -> None:
+    async def validate_instruction(self, instruction: str, strict: bool = False) -> None:
         """
         Validate that an instruction is recipe-related.
 
@@ -45,7 +45,7 @@ class MockJudge(Judge):
     Always validates instructions as valid.
     """
 
-    async def validate_instruction(self, instruction: str, strict: bool = True) -> None:
+    async def validate_instruction(self, instruction: str, strict: bool = False) -> None:
         """
         Mock validation that always passes.
 
@@ -78,7 +78,7 @@ class LLMJudge(Judge):
         prompt_loader = get_prompt_loader()
         self._instruction_validation_template = prompt_loader.load("instruction_validation")
 
-    async def validate_instruction(self, instruction: str, strict: bool = True) -> None:
+    async def validate_instruction(self, instruction: str, strict: bool = False) -> None:
         """
         Validate that an instruction is recipe-related using LLM.
 
@@ -89,6 +89,9 @@ class LLMJudge(Judge):
         Raises:
             InvalidInstructionError: If the instruction is invalid
         """
+        if not instruction.strip():
+            raise InvalidInstructionError("Please enter a recipe instruction")
+
         validation_prompt = self._instruction_validation_template.render(
             instruction=instruction,
             strict_mode=strict,
@@ -109,6 +112,19 @@ class LLMJudge(Judge):
                 return None
             else:
                 reason = validation_result.reason or "Invalid instruction"
-                raise InvalidInstructionError(reason)
+                # Provide more user-friendly error messages
+                if "vague" in reason.lower() or "not specific" in reason.lower():
+                    raise InvalidInstructionError(
+                        "Your instruction is a bit vague. Try adding more details like: "
+                        "'Make a quick vegetarian pasta with tomatoes and basil' or "
+                        "'Create a spicy Thai curry with chicken and coconut milk'"
+                    )
+                elif "not about" in reason.lower() or "not recipe" in reason.lower():
+                    raise InvalidInstructionError(
+                        "Please enter a recipe instruction. For example: "
+                        "'Make a chocolate cake' or 'Create a healthy salad'"
+                    )
+                else:
+                    raise InvalidInstructionError(reason)
         except Exception as e:
             raise InvalidInstructionError(f"Failed to validate instruction: {str(e)}") from None
