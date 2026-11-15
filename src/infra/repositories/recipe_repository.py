@@ -10,7 +10,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
     """SQLAlchemy implementation of Recipe repository."""
 
     def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+        self._session = session
 
     async def create(self, recipe: RecipeEntity) -> RecipeEntity:
         """Create a new recipe in the database."""
@@ -19,9 +19,9 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             content=recipe.content,
             summary=recipe.summary,
         )
-        self.session.add(recipe_model)
-        await self.session.commit()
-        await self.session.refresh(recipe_model)
+        self._session.add(recipe_model)
+        await self._session.commit()
+        await self._session.refresh(recipe_model)
         return RecipeEntity(
             id=recipe_model.id,
             title=recipe_model.title,
@@ -33,7 +33,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
 
     async def get_by_id(self, recipe_id: int) -> RecipeEntity | None:
         """Get a recipe by its ID."""
-        result = await self.session.execute(select(RecipeModel).where(RecipeModel.id == recipe_id))
+        result = await self._session.execute(select(RecipeModel).where(RecipeModel.id == recipe_id))
         recipe_model = result.scalar_one_or_none()
         if recipe_model is None:
             return None
@@ -48,7 +48,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
 
     async def update(self, recipe: RecipeEntity) -> RecipeEntity | None:
         """Update an existing recipe."""
-        result = await self.session.execute(select(RecipeModel).where(RecipeModel.id == recipe.id))
+        result = await self._session.execute(select(RecipeModel).where(RecipeModel.id == recipe.id))
         recipe_model = result.scalar_one_or_none()
         if recipe_model is None:
             return None
@@ -59,8 +59,8 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             recipe_model.content = recipe.content
         if recipe.summary is not None:
             recipe_model.summary = recipe.summary
-        await self.session.commit()
-        await self.session.refresh(recipe_model)
+        await self._session.commit()
+        await self._session.refresh(recipe_model)
         return RecipeEntity(
             id=recipe_model.id,
             title=recipe_model.title,
@@ -72,18 +72,18 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
 
     async def delete(self, recipe_id: int) -> bool:
         """Delete a recipe by its ID."""
-        result = await self.session.execute(select(RecipeModel).where(RecipeModel.id == recipe_id))
+        result = await self._session.execute(select(RecipeModel).where(RecipeModel.id == recipe_id))
         recipe_model = result.scalar_one_or_none()
         if recipe_model is None:
             return False
 
-        await self.session.delete(recipe_model)
-        await self.session.commit()
+        await self._session.delete(recipe_model)
+        await self._session.commit()
         return True
 
     async def list_all(self, skip: int = 0, limit: int = 100) -> list[RecipeEntity]:
         """List all recipes with pagination."""
-        result = await self.session.execute(
+        result = await self._session.execute(
             select(RecipeModel).order_by(RecipeModel.creation_date.desc()).offset(skip).limit(limit)
         )
         recipes = result.scalars().all()
@@ -101,7 +101,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
 
     async def search(self, keyword: str, skip: int = 0, limit: int = 100) -> list[RecipeEntity]:
         """Search recipes by keyword in title or content."""
-        result = await self.session.execute(
+        result = await self._session.execute(
             select(RecipeModel)
             .where(
                 or_(

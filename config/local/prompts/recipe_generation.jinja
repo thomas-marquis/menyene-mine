@@ -1,0 +1,21 @@
+{# Prompt for generating a single recipe #}
+{%- set num_recipes = num_recipes or 1 %}
+{%- if num_recipes > 1 %}
+Generate exactly {{ num_recipes }} different recipes based on: {{ instruction }}
+{%- else %}
+Generate exactly ONE detailed, practical recipe based on: {{ instruction }}
+{%- endif %}
+
+{%- if constraints %}
+Constraints:
+{%- for constraint in constraints %}
+- {{ constraint }}
+{%- endfor %}
+{%- endif %}
+
+{%- if preferences %}
+User preferences:
+{%- for preference in preferences %}
+- {{ preference }}
+{%- endfor %}
+{%- endif %}

@@ -50,7 +50,7 @@ export const GroceryListPage = () => {
     fetchGroceryItems();
   }, [fetchGroceryItems]);
 
-  const handleAddItem = async (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!newItemName.trim()) {
       setError('Item name is required');

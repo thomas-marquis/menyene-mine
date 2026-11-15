@@ -1,5 +1,4 @@
 # Given # When # Then
-import httpx
 from fastapi.testclient import TestClient
 
 from src.main import app
@@ -11,7 +10,7 @@ class TestHealth:
         client = TestClient(app)
 
         # When
-        response: httpx.Response = client.request("GET", "/health")
+        response = client.request("GET", "/health")
 
         # Then
         assert response.status_code == 200

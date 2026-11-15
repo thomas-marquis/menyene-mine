@@ -122,6 +122,11 @@ export const RecipeListPage = () => {
     setShowCreateModal(true);
   };
 
+  const handleCreateWithAI = () => {
+    setError(null);
+    navigate('/recipes/generate');
+  };
+
   const handleCloseModal = () => {
     setShowCreateModal(false);
     setError(null);
@@ -263,7 +268,7 @@ export const RecipeListPage = () => {
     return (
       <div className={styles.errorContainer}>
         <div className="alert alert-danger" role="alert">
-          {error}
+          <strong>Error:</strong> {error}
         </div>
         <Button
           onClick={() => {
@@ -288,15 +293,26 @@ export const RecipeListPage = () => {
       )}
       <div className={styles.header}>
         <h1 className={styles.title}>My Recipes</h1>
-        <Button
-          onClick={handleCreateRecipe}
-          variant="primary"
-          size="medium"
-          disabled={loading}
-        >
-          <i className="bi bi-plus-lg me-2"></i>
-          Create Recipe
-        </Button>
+        <div className={styles.headerButtons}>
+          <Button
+            onClick={handleCreateWithAI}
+            variant="outline"
+            size="medium"
+            disabled={loading}
+            className="me-2"
+          >
+            <i className="bi bi-robot me-1"></i> AI Create
+          </Button>
+          <Button
+            onClick={handleCreateRecipe}
+            variant="primary"
+            size="medium"
+            disabled={loading}
+          >
+            <i className="bi bi-plus-lg me-2"></i>
+            Create
+          </Button>
+        </div>
       </div>
 
       <div className={styles.searchContainer}>
@@ -409,7 +425,7 @@ export const RecipeListPage = () => {
             </Button>
           )}
           <Button onClick={handleCreateRecipe} variant="primary">
-            {searchQuery.trim() ? 'Create New Recipe' : 'Create Your First Recipe'}
+            {searchQuery.trim() ? 'Create' : 'Create Your First Recipe'}
           </Button>
         </div>
       )}

@@ -6,10 +6,10 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from src.config import get_settings
 from src.infra.models.base import Base
 from src.infra.models.grocery_item import GroceryItem  # noqa: F401
 from src.infra.models.recipe import Recipe  # noqa: F401
-from src.settings import get_settings
 
 config = context.config
 
