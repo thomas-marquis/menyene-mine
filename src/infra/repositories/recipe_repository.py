@@ -16,8 +16,13 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
         """Create a new recipe in the database."""
         recipe_model = RecipeModel(
             title=recipe.title,
-            content=recipe.content,
             summary=recipe.summary,
+            ingredients=recipe.ingredients or [],
+            instructions=recipe.instructions or [],
+            servings=recipe.servings or 4,
+            prep_time=recipe.prep_time or "0 minutes",
+            cook_time=recipe.cook_time or "0 minutes",
+            difficulty=recipe.difficulty or "Medium",
         )
         self._session.add(recipe_model)
         await self._session.commit()
@@ -27,8 +32,13 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             title=recipe_model.title,
             creation_date=recipe_model.creation_date,
             last_updated=recipe_model.last_updated,
-            content=recipe_model.content,
             summary=recipe_model.summary,
+            ingredients=recipe_model.ingredients,
+            instructions=recipe_model.instructions,
+            servings=recipe_model.servings,
+            prep_time=recipe_model.prep_time,
+            cook_time=recipe_model.cook_time,
+            difficulty=recipe_model.difficulty,
         )
 
     async def get_by_id(self, recipe_id: int) -> RecipeEntity | None:
@@ -42,8 +52,13 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             title=recipe_model.title,
             creation_date=recipe_model.creation_date,
             last_updated=recipe_model.last_updated,
-            content=recipe_model.content,
             summary=recipe_model.summary,
+            ingredients=recipe_model.ingredients,
+            instructions=recipe_model.instructions,
+            servings=recipe_model.servings,
+            prep_time=recipe_model.prep_time,
+            cook_time=recipe_model.cook_time,
+            difficulty=recipe_model.difficulty,
         )
 
     async def update(self, recipe: RecipeEntity) -> RecipeEntity | None:
@@ -55,10 +70,20 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
 
         if recipe.title is not None:
             recipe_model.title = recipe.title
-        if recipe.content is not None:
-            recipe_model.content = recipe.content
         if recipe.summary is not None:
             recipe_model.summary = recipe.summary
+        if recipe.ingredients is not None:
+            recipe_model.ingredients = recipe.ingredients
+        if recipe.instructions is not None:
+            recipe_model.instructions = recipe.instructions
+        if recipe.servings is not None:
+            recipe_model.servings = recipe.servings
+        if recipe.prep_time is not None:
+            recipe_model.prep_time = recipe.prep_time
+        if recipe.cook_time is not None:
+            recipe_model.cook_time = recipe.cook_time
+        if recipe.difficulty is not None:
+            recipe_model.difficulty = recipe.difficulty
         await self._session.commit()
         await self._session.refresh(recipe_model)
         return RecipeEntity(
@@ -66,8 +91,13 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             title=recipe_model.title,
             creation_date=recipe_model.creation_date,
             last_updated=recipe_model.last_updated,
-            content=recipe_model.content,
             summary=recipe_model.summary,
+            ingredients=recipe_model.ingredients,
+            instructions=recipe_model.instructions,
+            servings=recipe_model.servings,
+            prep_time=recipe_model.prep_time,
+            cook_time=recipe_model.cook_time,
+            difficulty=recipe_model.difficulty,
         )
 
     async def delete(self, recipe_id: int) -> bool:
@@ -93,20 +123,25 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
                 title=r.title,
                 creation_date=r.creation_date,
                 last_updated=r.last_updated,
-                content=r.content,
                 summary=r.summary,
+                ingredients=r.ingredients,
+                instructions=r.instructions,
+                servings=r.servings,
+                prep_time=r.prep_time,
+                cook_time=r.cook_time,
+                difficulty=r.difficulty,
             )
             for r in recipes
         ]
 
     async def search(self, keyword: str, skip: int = 0, limit: int = 100) -> list[RecipeEntity]:
-        """Search recipes by keyword in title or content."""
+        """Search recipes by keyword in title, summary, ingredients, or instructions."""
         result = await self._session.execute(
             select(RecipeModel)
             .where(
                 or_(
                     RecipeModel.title.ilike(f"%{keyword}%"),
-                    RecipeModel.content.ilike(f"%{keyword}%"),
+                    RecipeModel.summary.ilike(f"%{keyword}%"),
                 )
             )
             .order_by(RecipeModel.creation_date.desc())
@@ -120,8 +155,37 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
                 title=r.title,
                 creation_date=r.creation_date,
                 last_updated=r.last_updated,
-                content=r.content,
                 summary=r.summary,
+                ingredients=r.ingredients,
+                instructions=r.instructions,
+                servings=r.servings,
+                prep_time=r.prep_time,
+                cook_time=r.cook_time,
+                difficulty=r.difficulty,
             )
             for r in recipes
         ]
+
+    async def update_instructions(self, recipe_id: int, instructions: list[str]) -> RecipeEntity | None:
+        """Update only the instructions for a recipe."""
+        result = await self._session.execute(select(RecipeModel).where(RecipeModel.id == recipe_id))
+        recipe_model = result.scalar_one_or_none()
+        if recipe_model is None:
+            return None
+
+        recipe_model.instructions = instructions
+        await self._session.commit()
+        await self._session.refresh(recipe_model)
+        return RecipeEntity(
+            id=recipe_model.id,
+            title=recipe_model.title,
+            creation_date=recipe_model.creation_date,
+            last_updated=recipe_model.last_updated,
+            summary=recipe_model.summary,
+            ingredients=recipe_model.ingredients,
+            instructions=recipe_model.instructions,
+            servings=recipe_model.servings,
+            prep_time=recipe_model.prep_time,
+            cook_time=recipe_model.cook_time,
+            difficulty=recipe_model.difficulty,
+        )

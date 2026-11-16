@@ -8,14 +8,14 @@ Feature: Recipe Management API
         And I have a mocked recipe repository
 
     Scenario: Create a new recipe
-        Given I have a recipe payload with title "Spaghetti Bolognese", content "Ingredients...", and summary "Classic Italian dish"
+        Given I have a recipe payload with title "Spaghetti Bolognese" and summary "Classic Italian dish"
         When I POST to "/api/v1/recipes/" with the recipe payload
         Then the response status code should be 201
         And the response should contain the recipe with title "Spaghetti Bolognese"
         And the response should contain the recipe with summary "Classic Italian dish"
 
     Scenario: Get a recipe by ID
-        Given a recipe exists with id 1, title "Spaghetti Bolognese", content "Ingredients...", and summary "Classic Italian dish"
+        Given a recipe exists with id 1, title "Spaghetti Bolognese", and summary "Classic Italian dish"
         When I GET "/api/v1/recipes/1"
         Then the response status code should be 200
         And the response should contain the recipe with title "Spaghetti Bolognese"
@@ -25,11 +25,11 @@ Feature: Recipe Management API
         Then the response status code should be 404
 
     Scenario: Update a recipe
-        Given a recipe exists with id 1, title "Old Title", content "Old content", and summary "Old summary"
-        When I PUT to "/api/v1/recipes/1" with title "New Title", content "New content", and summary "New summary"
+        Given a recipe exists with id 1, title "Old Title", and summary "Old summary"
+        When I PUT to "/api/v1/recipes/1" with title "New Title" and summary "New summary"
         Then the response status code should be 200
         And the response should contain the recipe with title "New Title"
-        And the response should contain the recipe with content "New content"
+        And the response should contain the recipe with ingredients
 
     Scenario: Delete a recipe
         Given a recipe exists with id 1
@@ -56,8 +56,8 @@ Feature: Recipe Management API
         And the limit should be 10
 
     Scenario: Search recipes by keyword
-        Given a recipe exists with title "Pasta Carbonara" and content "Pasta with eggs..."
-        And a recipe exists with title "Beef Stew" and content "Beef with vegetables..."
+        Given a recipe exists with title "Pasta Carbonara" and summary "Pasta with eggs..."
+        And a recipe exists with title "Beef Stew" and summary "Beef with vegetables..."
         When I GET "/api/v1/recipes/search?keyword=pasta"
         Then the response status code should be 200
         And the response should contain the recipe with title "Pasta Carbonara"

@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '../../common/Button/Button';
 import { Modal } from '../../common/Modal/Modal';
 import { recipeService } from '../../../services/recipeService';
@@ -13,109 +12,8 @@ interface RecipeFormModalProps {
   recipe?: Recipe | null;
 }
 
-// Simple markdown to HTML renderer for preview
-function renderMarkdownPreview(markdown: string): string {
-  if (!markdown || markdown.trim() === '') {
-    return '<p>Preview will appear here...</p>';
-  }
-
-  const lines = markdown.split('\n');
-  let html = '';
-  let inList = false;
-  let inOrderedList = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmedLine = line.trim();
-
-    if (trimmedLine === '') {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      continue;
-    }
-
-    // Headers
-    if (trimmedLine.startsWith('# ')) {
-      if (inList) html += '</ul>';
-      if (inOrderedList) html += '</ol>';
-      inList = false;
-      inOrderedList = false;
-      html += `<h1>${trimmedLine.substring(2)}</h1>`;
-      continue;
-    }
-    if (trimmedLine.startsWith('## ')) {
-      if (inList) html += '</ul>';
-      if (inOrderedList) html += '</ol>';
-      inList = false;
-      inOrderedList = false;
-      html += `<h2>${trimmedLine.substring(3)}</h2>`;
-      continue;
-    }
-    if (trimmedLine.startsWith('### ')) {
-      if (inList) html += '</ul>';
-      if (inOrderedList) html += '</ol>';
-      inList = false;
-      inOrderedList = false;
-      html += `<h3>${trimmedLine.substring(4)}</h3>`;
-      continue;
-    }
-
-    // Lists
-    if (trimmedLine.startsWith('- ')) {
-      if (!inList && !inOrderedList) {
-        html += '<ul>';
-        inList = true;
-      } else if (inOrderedList) {
-        html += '</ol><ul>';
-        inOrderedList = false;
-        inList = true;
-      }
-      html += `<li>${trimmedLine.substring(2)}</li>`;
-      continue;
-    }
-
-    if (/^\d+\. /.test(trimmedLine)) {
-      if (!inOrderedList && !inList) {
-        html += '<ol>';
-        inOrderedList = true;
-      } else if (inList) {
-        html += '</ul><ol>';
-        inList = false;
-        inOrderedList = true;
-      }
-      const content = trimmedLine.replace(/^\d+\. /, '');
-      html += `<li>${content}</li>`;
-      continue;
-    }
-
-    if (inList) {
-      html += '</ul>';
-      inList = false;
-    }
-    if (inOrderedList) {
-      html += '</ol>';
-      inOrderedList = false;
-    }
-
-    let processedLine = trimmedLine
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-    html += `<p>${processedLine}</p>`;
-  }
-
-  if (inList) html += '</ul>';
-  if (inOrderedList) html += '</ol>';
-
-  return html;
-}
+// Difficulty options
+const DIFFICULTY_OPTIONS = ['Easy', 'Medium', 'Hard'];
 
 export const RecipeFormModal = ({
   isOpen,
@@ -124,40 +22,160 @@ export const RecipeFormModal = ({
   recipe,
 }: RecipeFormModalProps) => {
   const isEditMode = Boolean(recipe && recipe.id);
-  const navigate = useNavigate();
+
+  // Form state with structured fields
   const [formData, setFormData] = useState({
     title: '',
-    content: '',
     summary: '',
+    ingredients: [''] as string[],
+    instructions: [''] as string[],
+    servings: 4,
+    prep_time: '0 minutes',
+    cook_time: '0 minutes',
+    difficulty: 'Medium',
   });
+
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'manual' | 'ai'>('manual');
-  const [contentTab, setContentTab] = useState<'edit' | 'preview'>('edit');
-  const [aiPrompt, setAiPrompt] = useState('');
+  
+  // Drag and drop state for instructions (mouse-based approach)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [mousePosition, setMousePosition] = useState<[number, number]>([0, 0]);
+  const [dropZoneIndex, setDropZoneIndex] = useState<number>(0);
+  
+  // Track mouse position
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      setMousePosition([e.clientX, e.clientY]);
+    };
+    document.addEventListener('mousemove', handler);
+    return () => document.removeEventListener('mousemove', handler);
+  }, []);
 
+  // Find closest drop zone
+  // We use data attributes instead of class names because CSS Modules hash class names
+  useEffect(() => {
+    if (draggedIndex !== null) {
+      const elements = Array.from(document.querySelectorAll('[data-drop-zone-index]'));
+      if (elements.length > 0) {
+        // Get vertical positions of all drop zones
+        const positions = elements.map((e: HTMLElement) => e.getBoundingClientRect().top);
+        // Find which drop zone is closest to the mouse
+        const absDifferences = positions.map((v: number) => Math.abs(v - mousePosition[1]));
+        let closestDropZoneDomIndex = absDifferences.indexOf(Math.min(...absDifferences));
+        
+        // Get the actual drop zone index from the data attribute
+        // This maps directly to the insertion position in the instructions array
+        const closestElement = elements[closestDropZoneDomIndex] as HTMLElement;
+        const closestDropZoneIndex = parseInt(closestElement.dataset.dropZoneIndex || '0');
+        
+        // Ensure the index is within bounds (0 to instructions.length)
+        const boundedIndex = Math.max(0, Math.min(closestDropZoneIndex, formData.instructions.length));
+        
+        setDropZoneIndex(boundedIndex);
+      }
+    }
+  }, [draggedIndex, mousePosition, formData.instructions.length]);
+
+  // Drop item on mouse up
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (draggedIndex !== null) {
+        e.preventDefault();
+        setDraggedIndex(null);
+        
+        // Reorder the list
+        setFormData((prev) => {
+          const newInstructions = [...prev.instructions];
+          let fromIndex = draggedIndex;
+          let toIndex = dropZoneIndex;
+          
+          // Ensure indices are within bounds
+          fromIndex = Math.max(0, Math.min(fromIndex, newInstructions.length - 1));
+          toIndex = Math.max(0, Math.min(toIndex, newInstructions.length));
+          
+          if (fromIndex === toIndex) return prev;
+          
+          const reordered = reorderList(newInstructions, fromIndex, toIndex);
+          return { ...prev, instructions: reordered };
+        });
+      }
+    };
+    document.addEventListener('mouseup', handler);
+    return () => document.removeEventListener('mouseup', handler);
+  }, [draggedIndex, dropZoneIndex]);
+
+  // Helper function to reorder list
+  const reorderList = useCallback((list: string[], start: number, end: number): string[] => {
+    if (start === end) return list;
+    
+    const newList = [...list];
+    if (start < end) {
+      // Moving forward
+      const temp = newList[start];
+      for (let i = start; i < end; i++) {
+        newList[i] = newList[i + 1];
+      }
+      newList[end - 1] = temp;
+    } else {
+      // Moving backward
+      const temp = newList[start];
+      for (let i = start; i > end; i--) {
+        newList[i] = newList[i - 1];
+      }
+      newList[end] = temp;
+    }
+    return newList;
+  }, []);
+
+  // Initialize form with recipe data if editing
   useEffect(() => {
     if (recipe) {
+      // Always ensure there's at least one empty row at the end
+      let ingredients = recipe.ingredients && recipe.ingredients.length > 0
+        ? [...recipe.ingredients]
+        : [''];
+      let instructions = recipe.instructions && recipe.instructions.length > 0
+        ? [...recipe.instructions]
+        : [''];
+      
+      // Add empty row at the end if the last item is not empty
+      if (ingredients.length === 0 || ingredients[ingredients.length - 1].trim() !== '') {
+        ingredients = [...ingredients, ''];
+      }
+      if (instructions.length === 0 || instructions[instructions.length - 1].trim() !== '') {
+        instructions = [...instructions, ''];
+      }
+      
       setFormData({
         title: recipe.title || '',
-        content: recipe.content || '',
         summary: recipe.summary || '',
+        ingredients,
+        instructions,
+        servings: recipe.servings || 4,
+        prep_time: recipe.prep_time || '0 minutes',
+        cook_time: recipe.cook_time || '0 minutes',
+        difficulty: recipe.difficulty || 'Medium',
       });
     } else {
+      // Reset to defaults for new recipe
       setFormData({
         title: '',
-        content: '',
         summary: '',
+        ingredients: [''],
+        instructions: [''],
+        servings: 4,
+        prep_time: '0 minutes',
+        cook_time: '0 minutes',
+        difficulty: 'Medium',
       });
     }
-    setActiveTab('manual');
-    setContentTab('edit');
     setError(null);
-    setAiPrompt('');
   }, [recipe, isOpen]);
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Handle input changes for text fields
+  const handleTextChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       const { name, value } = e.target;
       setFormData((prev) => ({
         ...prev,
@@ -167,14 +185,89 @@ export const RecipeFormModal = ({
     []
   );
 
-  const handleAiPromptChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setAiPrompt(e.target.value);
+  // Handle ingredient changes
+  const handleIngredientChange = useCallback(
+    (index: number, value: string) => {
+      setFormData((prev) => {
+        const newIngredients = [...prev.ingredients];
+        newIngredients[index] = value;
+        return { ...prev, ingredients: newIngredients };
+      });
     },
     []
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle instruction changes
+  const handleInstructionChange = useCallback(
+    (index: number, value: string) => {
+      setFormData((prev) => {
+        const newInstructions = [...prev.instructions];
+        newInstructions[index] = value;
+        return { ...prev, instructions: newInstructions };
+      });
+    },
+    []
+  );
+
+  // Add new ingredient line when user starts typing in the last empty line
+  const handleIngredientInput = useCallback(
+    (index: number, value: string) => {
+      handleIngredientChange(index, value);
+      // If this is the last ingredient and it has content, add a new empty line
+      if (index === formData.ingredients.length - 1 && value.trim() !== '') {
+        setFormData((prev) => ({
+          ...prev,
+          ingredients: [...prev.ingredients, ''],
+        }));
+      }
+    },
+    [formData.ingredients.length, handleIngredientChange]
+  );
+
+  // Add new instruction line when user starts typing in the last empty line
+  const handleInstructionInput = useCallback(
+    (index: number, value: string) => {
+      handleInstructionChange(index, value);
+      // If this is the last instruction and it has content, add a new empty line
+      if (index === formData.instructions.length - 1 && value.trim() !== '') {
+        setFormData((prev) => ({
+          ...prev,
+          instructions: [...prev.instructions, ''],
+        }));
+      }
+    },
+    [formData.instructions.length, handleInstructionChange]
+  );
+
+  // Remove ingredient line
+  const removeIngredient = useCallback((index: number) => {
+    if (formData.ingredients.length > 1) {
+      setFormData((prev) => {
+        const newIngredients = [...prev.ingredients];
+        newIngredients.splice(index, 1);
+        return { ...prev, ingredients: newIngredients };
+      });
+    }
+  }, [formData.ingredients.length]);
+
+  // Remove instruction line
+  const removeInstruction = useCallback((index: number) => {
+    if (formData.instructions.length > 1) {
+      setFormData((prev) => {
+        const newInstructions = [...prev.instructions];
+        newInstructions.splice(index, 1);
+        return { ...prev, instructions: newInstructions };
+      });
+    }
+  }, [formData.instructions.length]);
+
+  // Mouse-based drag start handler
+  const handleMouseDown = useCallback((index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    setDraggedIndex(index);
+  }, []);
+
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -199,28 +292,41 @@ export const RecipeFormModal = ({
       return;
     }
 
-    if (!formData.content.trim()) {
-      setError('Content is required');
+    // Validate at least one ingredient
+    if (formData.ingredients.filter((ing) => ing.trim()).length === 0) {
+      setError('At least one ingredient is required');
+      return;
+    }
+
+    // Validate at least one instruction
+    if (formData.instructions.filter((inst) => inst.trim()).length === 0) {
+      setError('At least one instruction is required');
       return;
     }
 
     setLoading(true);
 
     try {
+      // Prepare data for API - filter out empty strings
+      const submitData: RecipeCreate | RecipeUpdate = {
+        title: formData.title.trim(),
+        summary: formData.summary.trim(),
+        ingredients: formData.ingredients
+          .map((ing) => ing.trim())
+          .filter((ing) => ing !== ''),
+        instructions: formData.instructions
+          .map((inst) => inst.trim())
+          .filter((inst) => inst !== ''),
+        servings: formData.servings,
+        prep_time: formData.prep_time,
+        cook_time: formData.cook_time,
+        difficulty: formData.difficulty,
+      };
+
       if (isEditMode && recipe && recipe.id) {
-        const updateData: RecipeUpdate = {
-          title: formData.title.trim(),
-          content: formData.content.trim(),
-          summary: formData.summary.trim(),
-        };
-        await recipeService.updateRecipe(recipe.id, updateData);
+        await recipeService.updateRecipe(recipe.id, submitData as RecipeUpdate);
       } else {
-        const createData: RecipeCreate = {
-          title: formData.title.trim(),
-          content: formData.content.trim(),
-          summary: formData.summary.trim(),
-        };
-        await recipeService.createRecipe(createData);
+        await recipeService.createRecipe(submitData as RecipeCreate);
       }
       onSuccess();
     } catch (err: any) {
@@ -254,20 +360,16 @@ export const RecipeFormModal = ({
       onClose();
       setFormData({
         title: '',
-        content: '',
         summary: '',
+        ingredients: [''],
+        instructions: [''],
+        servings: 4,
+        prep_time: '0 minutes',
+        cook_time: '0 minutes',
+        difficulty: 'Medium',
       });
       setError(null);
-      setActiveTab('manual');
-      setContentTab('edit');
-      setAiPrompt('');
     }
-  };
-
-  const handleNavigateToAIGenerator = () => {
-    // Close modal and navigate to AI generator
-    onClose();
-    navigate('/recipes/generate');
   };
 
   return (
@@ -279,38 +381,13 @@ export const RecipeFormModal = ({
       closeOnEscape={!loading}
     >
       <div className={styles.modalContent}>
-        {/* Creation Method Tabs */}
-        {!isEditMode && (
-          <div className={styles.creationTabs}>
-            <div className={styles.tabs}>
-              <button
-                type="button"
-                className={`${styles.tab} ${activeTab === 'manual' ? styles.tabActive : ''}`}
-                onClick={() => setActiveTab('manual')}
-                disabled={loading}
-              >
-                <i className="bi bi-pencil me-1"></i> Manual
-              </button>
-              <button
-                type="button"
-                className={`${styles.tab} ${activeTab === 'ai' ? styles.tabActive : ''}`}
-                onClick={() => setActiveTab('ai')}
-                disabled={loading}
-              >
-                <i className="bi bi-robot me-1"></i> AI-Assisted
-              </button>
-            </div>
-          </div>
-        )}
-
         {error && (
           <div className="alert alert-danger" role="alert">
             <strong>Error:</strong> {error}
           </div>
         )}
 
-        {activeTab === 'manual' ? (
-          <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
               <label htmlFor="title" className={styles.label}>
                 Title *
@@ -320,7 +397,7 @@ export const RecipeFormModal = ({
                 id="title"
                 name="title"
                 value={formData.title}
-                onChange={handleChange}
+                onChange={handleTextChange}
                 className="form-control"
                 placeholder="Enter recipe title"
                 maxLength={255}
@@ -339,7 +416,7 @@ export const RecipeFormModal = ({
                 id="summary"
                 name="summary"
                 value={formData.summary}
-                onChange={handleChange}
+                onChange={handleTextChange}
                 className="form-control"
                 placeholder="Enter a brief summary of the recipe"
                 rows={3}
@@ -351,58 +428,197 @@ export const RecipeFormModal = ({
               </div>
             </div>
 
+            {/* Ingredients Section */}
             <div className={styles.formGroup}>
-              <label htmlFor="content" className={styles.label}>
-                Content * (Markdown supported)
+              <label className={styles.label}>
+                Ingredients *
               </label>
-              <div className={styles.tabContainer}>
-                <div className={styles.tabs}>
-                  <button
-                    type="button"
-                    className={`${styles.tab} ${contentTab === 'edit' ? styles.tabActive : ''}`}
-                    onClick={() => setContentTab('edit')}
-                    disabled={loading}
-                  >
-                    <i className="bi bi-pencil me-1"></i> Edit
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.tab} ${contentTab === 'preview' ? styles.tabActive : ''}`}
-                    onClick={() => setContentTab('preview')}
-                    disabled={loading}
-                  >
-                    <i className="bi bi-eye me-1"></i> Preview
-                  </button>
-                </div>
-                <div className={styles.tabContent}>
-                  {contentTab === 'edit' ? (
-                    <>
-                      <textarea
-                        id="content"
-                        name="content"
-                        value={formData.content}
-                        onChange={handleChange}
-                        className="form-control"
-                        placeholder="Enter recipe content in markdown format..."
-                        rows={10}
-                        disabled={loading}
-                      />
-                      <div className={styles.markdownHelp}>
-                        <small>
-                          Supports: <code># Headers</code>, <code>**bold**</code>,{' '}
-                          <code>*italic*</code>, <code>- Lists</code>,{' '}
-                          <code>[links](url)</code>
-                        </small>
-                      </div>
-                    </>
-                  ) : (
-                    <div
-                      className={styles.previewContent}
-                      dangerouslySetInnerHTML={{
-                        __html: renderMarkdownPreview(formData.content),
-                      }}
+              {formData.ingredients.map((ingredient, index) => (
+                <div key={index} className={styles.ingredientRow}>
+                  <div className={styles.ingredientInputContainer}>
+                    <input
+                      type="text"
+                      value={ingredient}
+                      onChange={(e) => handleIngredientInput(index, e.target.value)}
+                      className="form-control"
+                      placeholder={index === 0 ? "Enter an ingredient (e.g., 2 cups flour)" : "Enter another ingredient"}
+                      disabled={loading}
                     />
+                  </div>
+                  {formData.ingredients.length > 1 && (
+                    <button
+                      type="button"
+                      className={styles.removeButton}
+                      onClick={() => removeIngredient(index)}
+                      disabled={loading}
+                      title="Remove ingredient"
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
                   )}
+                </div>
+              ))}
+            </div>
+
+            {/* Instructions Section */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                Instructions * (Drag to reorder)
+              </label>
+              
+              {/* Floating dragged item */}
+              {draggedIndex !== null && (
+                <div
+                  className={`${styles.instructionRow} ${styles.floating}`}
+                  style={{
+                    left: `${mousePosition[0]}px`,
+                    top: `${mousePosition[1]}px`,
+                    position: 'fixed',
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                    boxShadow: '5px 5px 10px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  <div className={styles.instructionInputContainer}>
+                    <div className={styles.stepNumber}>{draggedIndex + 1}.</div>
+                    <div className={styles.dragHandle}>
+                      <i className="bi bi-grip-vertical"></i>
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.instructions[draggedIndex]}
+                      className="form-control"
+                      readOnly
+                      style={{ background: 'white' }}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Drop zone before all items */}
+              <div
+                className={`${styles.instructionDropZone} ${draggedIndex === null || dropZoneIndex !== 0 ? styles.hidden : ''}`}
+                data-drop-zone-index={0}
+              />
+              
+              {/* Instruction items */}
+              {formData.instructions.map((instruction, originalIndex) => (
+                <div key={originalIndex}>
+                  {draggedIndex !== originalIndex && (
+                    <>
+                      <div
+                        className={styles.instructionRow}
+                        onMouseDown={(e) => handleMouseDown(originalIndex, e)}
+                      >
+                        <div className={styles.instructionInputContainer}>
+                          <div className={styles.stepNumber}>{originalIndex + 1}.</div>
+                          <div className={styles.dragHandle} title="Drag to reorder">
+                            <i className="bi bi-grip-vertical"></i>
+                          </div>
+                          <input
+                            type="text"
+                            value={instruction}
+                            onChange={(e) => handleInstructionInput(originalIndex, e.target.value)}
+                            className="form-control"
+                            placeholder={originalIndex === 0 ? "Enter first step" : "Enter next step"}
+                            disabled={loading}
+                          />
+                        </div>
+                        {formData.instructions.length > 1 && (
+                          <button
+                            type="button"
+                            className={styles.removeButton}
+                            onClick={() => removeInstruction(originalIndex)}
+                            disabled={loading}
+                            title="Remove step"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        )}
+                      </div>
+                      {/* Drop zone after each item - use originalIndex + 1 */}
+                      <div
+                        className={`${styles.instructionDropZone} ${draggedIndex === null || dropZoneIndex !== originalIndex + 1 ? styles.hidden : ''}`}
+                        data-drop-zone-index={originalIndex + 1}
+                      />
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Metadata Section */}
+            <div className={styles.metadataSection}>
+              <h4 className={styles.metadataTitle}>Recipe Details</h4>
+              
+              <div className={styles.metadataGrid}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="servings" className={styles.label}>
+                    Servings
+                  </label>
+                  <input
+                    type="number"
+                    id="servings"
+                    name="servings"
+                    value={formData.servings}
+                    onChange={handleTextChange}
+                    className="form-control"
+                    min={1}
+                    max={100}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="difficulty" className={styles.label}>
+                    Difficulty
+                  </label>
+                  <select
+                    id="difficulty"
+                    name="difficulty"
+                    value={formData.difficulty}
+                    onChange={handleTextChange}
+                    className="form-control"
+                    disabled={loading}
+                  >
+                    {DIFFICULTY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="prep_time" className={styles.label}>
+                    Prep Time
+                  </label>
+                  <input
+                    type="text"
+                    id="prep_time"
+                    name="prep_time"
+                    value={formData.prep_time}
+                    onChange={handleTextChange}
+                    className="form-control"
+                    placeholder="e.g., 20 minutes"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="cook_time" className={styles.label}>
+                    Cook Time
+                  </label>
+                  <input
+                    type="text"
+                    id="cook_time"
+                    name="cook_time"
+                    value={formData.cook_time}
+                    onChange={handleTextChange}
+                    className="form-control"
+                    placeholder="e.g., 30 minutes"
+                    disabled={loading}
+                  />
                 </div>
               </div>
             </div>
@@ -427,61 +643,7 @@ export const RecipeFormModal = ({
               </Button>
             </div>
           </form>
-        ) : (
-          // AI-Assisted Tab
-          <div className={styles.aiTabContent}>
-            <div className={styles.aiDescription}>
-              <p>
-                <strong>AI-Assisted Recipe Creation</strong>
-              </p>
-              <p>
-                Describe what you want to cook, and our AI will generate a complete recipe for you.
-                You'll be able to review, edit, and validate the generated recipe before it's added to your catalog.
-              </p>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="ai-prompt" className={styles.label}>
-                Describe your recipe idea *
-              </label>
-              <textarea
-                id="ai-prompt"
-                value={aiPrompt}
-                onChange={handleAiPromptChange}
-                className="form-control"
-                placeholder="e.g., Create a quick vegetarian pasta dish with tomatoes and basil..."
-                rows={6}
-                disabled={loading}
-              />
-              <div className={styles.aiHelp}>
-                <small>
-                  Be as specific as you like! The AI will generate a complete recipe based on your description.
-                </small>
-              </div>
-            </div>
-
-            <div className={styles.formActions}>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setActiveTab('manual')}
-                disabled={loading}
-              >
-                <i className="bi bi-arrow-left me-1"></i> Back to Manual
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleNavigateToAIGenerator}
-                disabled={loading || !aiPrompt.trim()}
-                className="ms-2"
-              >
-                <i className="bi bi-robot me-1"></i> Generate with AI
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+       </div>
     </Modal>
   );
 };

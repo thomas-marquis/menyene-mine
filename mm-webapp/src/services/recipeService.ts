@@ -31,6 +31,13 @@ export const recipeService = {
     return response.data;
   },
 
+  async updateInstructions(id: number, instructions: string[]): Promise<Recipe> {
+    const response = await api.patch<Recipe>(`${RECIPES_BASE_URL}/${id}/instructions`, {
+      instructions,
+    });
+    return response.data;
+  },
+
   async deleteRecipe(id: number): Promise<void> {
     await api.delete(`${RECIPES_BASE_URL}/${id}`);
   },

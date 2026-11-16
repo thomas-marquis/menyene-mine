@@ -34,7 +34,16 @@ class TestRecipeDraftUseCases:
         mock_recipe_repo = AsyncMock()
         mock_generator = AsyncMock()
 
-        mock_recipe = Recipe(title="Recipe 1", content="Content 1", summary="Summary 1")
+        mock_recipe = Recipe(
+            title="Recipe 1",
+            summary="Summary 1",
+            ingredients=["ingredient 1"],
+            instructions=["step 1"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Medium",
+        )
         mock_generator.generate_recipe.return_value = mock_recipe
 
         mock_draft = RecipeDraft(
@@ -196,7 +205,16 @@ class TestRecipeDraftUseCases:
         mock_draft = RecipeDraft(
             id=1,
             user_instruction="Test instruction",
-            generated_content=Recipe(title="Test Recipe", content="Test content", summary="Test summary"),
+            generated_content=Recipe(
+                title="Test Recipe",
+                summary="Test summary",
+                ingredients=["ingredient 1"],
+                instructions=["step 1"],
+                servings=4,
+                prep_time="10 minutes",
+                cook_time="20 minutes",
+                difficulty="Medium",
+            ),
             status=RecipeDraftStatus.DRAFT,
             created_at=datetime.now(),
             updated_at=datetime.now(),
@@ -206,8 +224,13 @@ class TestRecipeDraftUseCases:
         mock_recipe = Recipe(
             id=100,
             title="Test Recipe",
-            content="Test content",
             summary="Test summary",
+            ingredients=["ingredient 1"],
+            instructions=["step 1"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Medium",
         )
         mock_recipe_repo.create.return_value = mock_recipe
 

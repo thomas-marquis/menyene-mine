@@ -10,7 +10,6 @@ export interface RecipeDraft {
 
 export interface RecipeDraftContent {
   title: string;
-  content: string;
   summary: string;
   ingredients?: string[];
   instructions?: string[];

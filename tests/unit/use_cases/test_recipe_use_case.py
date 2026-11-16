@@ -15,8 +15,13 @@ class TestRecipeUseCases:
         mock_recipe = Recipe(
             id=1,
             title="Test Recipe",
-            content="Test content",
             summary="Test summary",
+            ingredients=["ingredient 1", "ingredient 2"],
+            instructions=["step 1", "step 2"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Easy",
             creation_date=None,
             last_updated=None,
         )
@@ -26,14 +31,20 @@ class TestRecipeUseCases:
         # When
         result = await use_cases.create_recipe(
             title="Test Recipe",
-            content="Test content",
             summary="Test summary",
+            ingredients=["ingredient 1", "ingredient 2"],
+            instructions=["step 1", "step 2"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Easy",
         )
 
         # Then
         assert result.title == "Test Recipe"
-        assert result.content == "Test content"
         assert result.summary == "Test summary"
+        assert result.ingredients == ["ingredient 1", "ingredient 2"]
+        assert result.instructions == ["step 1", "step 2"]
         mock_repo.create.assert_called_once()
 
     @pytest.mark.asyncio
@@ -43,8 +54,13 @@ class TestRecipeUseCases:
         mock_recipe = Recipe(
             id=1,
             title="Test Recipe",
-            content="Test content",
             summary="Test summary",
+            ingredients=["ingredient 1"],
+            instructions=["step 1"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Easy",
             creation_date=None,
             last_updated=None,
         )
@@ -81,16 +97,26 @@ class TestRecipeUseCases:
         existing_recipe = Recipe(
             id=1,
             title="Old Recipe",
-            content="Old content",
             summary="Old summary",
+            ingredients=["old ingredient"],
+            instructions=["old step"],
+            servings=2,
+            prep_time="5 minutes",
+            cook_time="10 minutes",
+            difficulty="Hard",
             creation_date=None,
             last_updated=None,
         )
         updated_recipe = Recipe(
             id=1,
             title="Updated Recipe",
-            content="Updated content",
             summary="Updated summary",
+            ingredients=["new ingredient"],
+            instructions=["new step"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Easy",
             creation_date=None,
             last_updated=None,
         )
@@ -102,14 +128,19 @@ class TestRecipeUseCases:
         result = await use_cases.update_recipe(
             recipe_id=1,
             title="Updated Recipe",
-            content="Updated content",
             summary="Updated summary",
+            ingredients=["new ingredient"],
+            instructions=["new step"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Easy",
         )
 
         # Then
         assert result is not None
         assert result.title == "Updated Recipe"
-        assert result.content == "Updated content"
+        assert result.ingredients == ["new ingredient"]
         mock_repo.update.assert_called_once()
 
     @pytest.mark.asyncio
@@ -123,8 +154,9 @@ class TestRecipeUseCases:
         result = await use_cases.update_recipe(
             recipe_id=999,
             title="Updated Recipe",
-            content="Updated content",
             summary="Updated summary",
+            ingredients=["ingredient"],
+            instructions=["step"],
         )
 
         # Then
@@ -182,16 +214,26 @@ class TestRecipeUseCases:
             Recipe(
                 id=1,
                 title="Recipe 1",
-                content="Content 1",
                 summary="Summary 1",
+                ingredients=["ingredient 1"],
+                instructions=["step 1"],
+                servings=4,
+                prep_time="10 minutes",
+                cook_time="20 minutes",
+                difficulty="Easy",
                 creation_date=None,
                 last_updated=None,
             ),
             Recipe(
                 id=2,
                 title="Recipe 2",
-                content="Content 2",
                 summary="Summary 2",
+                ingredients=["ingredient 2"],
+                instructions=["step 2"],
+                servings=4,
+                prep_time="10 minutes",
+                cook_time="20 minutes",
+                difficulty="Easy",
                 creation_date=None,
                 last_updated=None,
             ),
@@ -216,8 +258,13 @@ class TestRecipeUseCases:
             Recipe(
                 id=1,
                 title="Pasta Recipe",
-                content="Pasta content",
                 summary="Pasta summary",
+                ingredients=["pasta", "tomato"],
+                instructions=["cook pasta"],
+                servings=4,
+                prep_time="10 minutes",
+                cook_time="20 minutes",
+                difficulty="Easy",
                 creation_date=None,
                 last_updated=None,
             ),
@@ -232,3 +279,69 @@ class TestRecipeUseCases:
         assert len(result) == 1
         assert result[0].title == "Pasta Recipe"
         mock_repo.search.assert_called_once_with(keyword="pasta", skip=0, limit=100)
+
+    @pytest.mark.asyncio
+    async def test_should_reorder_instructions_when_valid_data_provided(self) -> None:
+        # Given
+        mock_repo = AsyncMock(spec=RecipeRepositoryImpl)
+        existing_recipe = Recipe(
+            id=1,
+            title="Test Recipe",
+            summary="Test summary",
+            ingredients=["ingredient 1", "ingredient 2"],
+            instructions=["step 1", "step 2", "step 3"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Easy",
+            creation_date=None,
+            last_updated=None,
+        )
+        updated_recipe = Recipe(
+            id=1,
+            title="Test Recipe",
+            summary="Test summary",
+            ingredients=["ingredient 1", "ingredient 2"],
+            instructions=["step 2", "step 1", "step 3"],  # Reordered
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Easy",
+            creation_date=None,
+            last_updated=None,
+        )
+        mock_repo.get_by_id.return_value = existing_recipe
+        mock_repo.update.return_value = updated_recipe
+        use_cases = RecipeUseCases(mock_repo)
+
+        # When
+        result = await use_cases.reorder_instructions(
+            recipe_id=1,
+            instructions=["step 2", "step 1", "step 3"],
+        )
+
+        # Then
+        assert result is not None
+        assert result.instructions == ["step 2", "step 1", "step 3"]
+        assert result.title == "Test Recipe"  # Other fields should remain unchanged
+        assert result.ingredients == ["ingredient 1", "ingredient 2"]
+        mock_repo.get_by_id.assert_called_once_with(1)
+        mock_repo.update.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_should_return_none_when_reorder_instructions_nonexistent_recipe(self) -> None:
+        # Given
+        mock_repo = AsyncMock(spec=RecipeRepositoryImpl)
+        mock_repo.get_by_id.return_value = None
+        use_cases = RecipeUseCases(mock_repo)
+
+        # When
+        result = await use_cases.reorder_instructions(
+            recipe_id=999,
+            instructions=["step 2", "step 1"],
+        )
+
+        # Then
+        assert result is None
+        mock_repo.get_by_id.assert_called_once_with(999)
+        mock_repo.update.assert_not_called()

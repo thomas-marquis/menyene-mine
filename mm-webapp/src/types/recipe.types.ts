@@ -3,8 +3,13 @@ export interface Recipe {
   title: string;
   creation_date: string;
   last_updated: string;
-  content: string;
   summary: string;
+  ingredients: string[];
+  instructions: string[];
+  servings: number;
+  prep_time: string;
+  cook_time: string;
+  difficulty: string;
 }
 
 export interface RecipeListResponse {
@@ -16,12 +21,22 @@ export interface RecipeListResponse {
 
 export interface RecipeCreate {
   title: string;
-  content: string;
   summary: string;
+  ingredients: string[];
+  instructions: string[];
+  servings?: number;
+  prep_time?: string;
+  cook_time?: string;
+  difficulty?: string;
 }
 
 export interface RecipeUpdate {
   title: string;
-  content: string;
   summary: string;
+  ingredients: string[];
+  instructions: string[];
+  servings?: number;
+  prep_time?: string;
+  cook_time?: string;
+  difficulty?: string;
 }

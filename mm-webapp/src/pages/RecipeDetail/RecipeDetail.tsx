@@ -259,7 +259,7 @@ export const RecipeDetailPage = () => {
           <div
             className={styles.markdownContent}
             dangerouslySetInnerHTML={{
-              __html: renderMarkdown(recipe.content || 'No content available'),
+              __html: renderStructuredRecipe(recipe),
             }}
           />
         </div>
@@ -455,4 +455,36 @@ function renderMarkdown(markdown: string): string {
   }
 
   return html;
+};
+
+// Function to render structured recipe data as markdown
+function renderStructuredRecipe(recipe: Recipe): string {
+  // Generate markdown from structured fields
+  const ingredientsMd = recipe.ingredients && recipe.ingredients.length > 0
+    ? recipe.ingredients.map((ing) => `- ${ing}`).join('\n')
+    : '';
+
+  const instructionsMd = recipe.instructions && recipe.instructions.length > 0
+    ? recipe.instructions.map((inst, index) => `${index + 1}. ${inst}`).join('\n')
+    : '';
+
+  const markdown = `# ${recipe.title || 'Untitled Recipe'}
+
+## Summary
+${recipe.summary || ''}
+
+## Ingredients
+${ingredientsMd || ''}
+
+## Instructions
+${instructionsMd || ''}
+
+## Details
+- **Servings:** ${recipe.servings || 4}
+- **Prep Time:** ${recipe.prep_time || '0 minutes'}
+- **Cook Time:** ${recipe.cook_time || '0 minutes'}
+- **Difficulty:** ${recipe.difficulty || 'Medium'}
+`;
+
+  return renderMarkdown(markdown);
 }

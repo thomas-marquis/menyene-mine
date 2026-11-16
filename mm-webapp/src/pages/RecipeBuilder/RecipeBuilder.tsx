@@ -13,7 +13,6 @@ export const RecipeBuilderPage = () => {
   const [drafts, setDrafts] = useState<RecipeDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const maxDrafts = 1;
 
   const handleInstructionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInstruction(e.target.value);

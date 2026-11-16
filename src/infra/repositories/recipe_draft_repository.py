@@ -146,7 +146,12 @@ class RecipeDraftRepositoryImpl(RecipeDraftRepositoryPort):
         if isinstance(content, Recipe):
             return {
                 "title": content.title,
-                "content": content.content,
                 "summary": content.summary,
+                "ingredients": content.ingredients,
+                "instructions": content.instructions,
+                "servings": content.servings,
+                "prep_time": content.prep_time,
+                "cook_time": content.cook_time,
+                "difficulty": content.difficulty,
             }
         return content

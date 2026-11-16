@@ -98,15 +98,18 @@ class RecipeAIGenerator(RecipeGenerator):
             recipe: Pydantic GeneratedRecipe model
 
         Returns:
-            Recipe domain entity with formatted content
+            Recipe domain entity with structured fields
         """
-
-        content = self._format_recipe_content(recipe)
 
         return RecipeEntity(
             title=recipe.title,
             summary=recipe.summary,
-            content=content,
+            ingredients=recipe.ingredients,
+            instructions=recipe.instructions,
+            servings=recipe.servings,
+            prep_time=recipe.prep_time,
+            cook_time=recipe.cook_time,
+            difficulty=recipe.difficulty,
         )
 
     def _format_recipe_content(self, recipe: GeneratedRecipe) -> str:

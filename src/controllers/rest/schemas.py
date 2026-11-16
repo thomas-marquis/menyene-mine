@@ -6,14 +6,30 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 
 class RecipeCreate(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
-    content: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
     summary: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
+    ingredients: list[str]
+    instructions: list[str]
+    servings: int = 4
+    prep_time: str = "0 minutes"
+    cook_time: str = "0 minutes"
+    difficulty: str = "Medium"
 
 
 class RecipeUpdate(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
-    content: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
     summary: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
+    ingredients: list[str]
+    instructions: list[str]
+    servings: int = 4
+    prep_time: str = "0 minutes"
+    cook_time: str = "0 minutes"
+    difficulty: str = "Medium"
+
+
+class RecipeInstructionsReorder(BaseModel):
+    """Schema for reordering recipe instructions via drag-and-drop."""
+
+    instructions: list[str]
 
 
 class RecipeResponse(BaseModel):
@@ -23,8 +39,13 @@ class RecipeResponse(BaseModel):
     title: str
     creation_date: datetime
     last_updated: datetime
-    content: str
     summary: str
+    ingredients: list[str]
+    instructions: list[str]
+    servings: int
+    prep_time: str
+    cook_time: str
+    difficulty: str
 
 
 class RecipeListResponse(BaseModel):
