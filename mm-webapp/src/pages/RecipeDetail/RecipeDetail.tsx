@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/common/Button/Button';
+import { RecipeContent } from '../../components/recipe/RecipeContent';
 import { RecipeFormModal } from '../../components/recipe/RecipeFormModal/RecipeFormModal';
 import { recipeService } from '../../services/recipeService';
 import type { Recipe } from '../../types/recipe.types';
@@ -255,12 +256,17 @@ export const RecipeDetailPage = () => {
         </div>
 
         <div className={styles.content}>
-          <h2 className={styles.contentTitle}>Recipe Details</h2>
-          <div
-            className={styles.markdownContent}
-            dangerouslySetInnerHTML={{
-              __html: renderStructuredRecipe(recipe),
-            }}
+          <RecipeContent
+            title={recipe.title}
+            summary={recipe.summary}
+            ingredients={recipe.ingredients}
+            instructions={recipe.instructions}
+            servings={recipe.servings}
+            prep_time={recipe.prep_time}
+            cook_time={recipe.cook_time}
+            difficulty={recipe.difficulty}
+            showTitle={false}
+            showSummary={false}
           />
         </div>
       </div>
@@ -314,177 +320,3 @@ export const RecipeDetailPage = () => {
     </div>
   );
 };
-
-// Simple markdown to HTML renderer
-function renderMarkdown(markdown: string): string {
-  if (!markdown || markdown.trim() === '') {
-    return '<p>No content available</p>';
-  }
-
-  // Split into lines and process each line
-  const lines = markdown.split('\n');
-  let html = '';
-  let inList = false;
-  let inOrderedList = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmedLine = line.trim();
-
-    // Skip empty lines
-    if (trimmedLine === '') {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      continue;
-    }
-
-    // Headers
-    if (trimmedLine.startsWith('# ')) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      html += `<h1>${trimmedLine.substring(2)}</h1>`;
-      continue;
-    }
-    if (trimmedLine.startsWith('## ')) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      html += `<h2>${trimmedLine.substring(3)}</h2>`;
-      continue;
-    }
-    if (trimmedLine.startsWith('### ')) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      html += `<h3>${trimmedLine.substring(4)}</h3>`;
-      continue;
-    }
-    if (trimmedLine.startsWith('#### ')) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      html += `<h4>${trimmedLine.substring(5)}</h4>`;
-      continue;
-    }
-
-    // Unordered lists
-    if (trimmedLine.startsWith('- ')) {
-      if (!inList && !inOrderedList) {
-        html += '<ul>';
-        inList = true;
-      } else if (inOrderedList) {
-        html += '</ol><ul>';
-        inOrderedList = false;
-        inList = true;
-      }
-      html += `<li>${trimmedLine.substring(2)}</li>`;
-      continue;
-    }
-
-    // Ordered lists
-    if (/^\d+\. /.test(trimmedLine)) {
-      if (!inOrderedList && !inList) {
-        html += '<ol>';
-        inOrderedList = true;
-      } else if (inList) {
-        html += '</ul><ol>';
-        inList = false;
-        inOrderedList = true;
-      }
-      const content = trimmedLine.replace(/^\d+\. /, '');
-      html += `<li>${content}</li>`;
-      continue;
-    }
-
-    // If we were in a list but this line isn't a list item, close the list
-    if (inList) {
-      html += '</ul>';
-      inList = false;
-    }
-    if (inOrderedList) {
-      html += '</ol>';
-      inOrderedList = false;
-    }
-
-    // Handle other markdown elements within the line
-    let processedLine = trimmedLine
-      // Bold
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Italic
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Links
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-    // Wrap in paragraph
-    html += `<p>${processedLine}</p>`;
-  }
-
-  // Close any open lists
-  if (inList) {
-    html += '</ul>';
-  }
-  if (inOrderedList) {
-    html += '</ol>';
-  }
-
-  return html;
-};
-
-// Function to render structured recipe data as markdown
-function renderStructuredRecipe(recipe: Recipe): string {
-  // Generate markdown from structured fields
-  const ingredientsMd = recipe.ingredients && recipe.ingredients.length > 0
-    ? recipe.ingredients.map((ing) => `- ${ing}`).join('\n')
-    : '';
-
-  const instructionsMd = recipe.instructions && recipe.instructions.length > 0
-    ? recipe.instructions.map((inst, index) => `${index + 1}. ${inst}`).join('\n')
-    : '';
-
-  const markdown = `# ${recipe.title || 'Untitled Recipe'}
-
-## Summary
-${recipe.summary || ''}
-
-## Ingredients
-${ingredientsMd || ''}
-
-## Instructions
-${instructionsMd || ''}
-
-## Details
-- **Servings:** ${recipe.servings || 4}
-- **Prep Time:** ${recipe.prep_time || '0 minutes'}
-- **Cook Time:** ${recipe.cook_time || '0 minutes'}
-- **Difficulty:** ${recipe.difficulty || 'Medium'}
-`;
-
-  return renderMarkdown(markdown);
-}

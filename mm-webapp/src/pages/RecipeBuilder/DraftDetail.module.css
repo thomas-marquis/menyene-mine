@@ -113,32 +113,6 @@
   font-size: 1.25rem;
 }
 
-.markdownContent {
-  line-height: 1.6;
-}
-
-.markdownContent h1,
-.markdownContent h2,
-.markdownContent h3,
-.markdownContent h4 {
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.markdownContent ul,
-.markdownContent ol {
-  padding-left: 2rem;
-  margin-bottom: 1rem;
-}
-
-.markdownContent li {
-  margin-bottom: 0.5rem;
-}
-
-.markdownContent p {
-  margin-bottom: 1rem;
-}
-
 .meta:last-child {
   margin-bottom: 1.5rem;
 }

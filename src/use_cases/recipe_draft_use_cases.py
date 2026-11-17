@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from ..domain.entities.recipe import Recipe
-from ..domain.entities.recipe_draft import RecipeDraft, RecipeDraftStatus
+from ..domain.entities.recipe_draft import RecipeDraft, RecipeDraftContent, RecipeDraftStatus
 from ..domain.exceptions import DomainException, InvalidInstructionError
 from ..domain.ports.recipe_draft_repository import RecipeDraftRepositoryPort
 from ..domain.ports.recipe_repository import RecipeRepositoryPort
@@ -114,15 +114,15 @@ class RecipeDraftUseCases:
             cook_time = recipe_entity.cook_time or "0 minutes"
             difficulty = recipe_entity.difficulty or "Medium"
         else:
-            content = draft.generated_content or {}
-            title = content.get("title", "Untitled Recipe")
-            summary = content.get("summary", "")
-            ingredients = content.get("ingredients", [])
-            instructions = content.get("instructions", [])
-            servings = content.get("servings", 4)
-            prep_time = content.get("prep_time", "0 minutes")
-            cook_time = content.get("cook_time", "0 minutes")
-            difficulty = content.get("difficulty", "Medium")
+            content: RecipeDraftContent = draft.generated_content or {}
+            title = content.get("title") or "Untitled Recipe"
+            summary = content.get("summary") or ""
+            ingredients = content.get("ingredients") or []
+            instructions = content.get("instructions") or []
+            servings = content.get("servings") or 4
+            prep_time = content.get("prep_time") or "0 minutes"
+            cook_time = content.get("cook_time") or "0 minutes"
+            difficulty = content.get("difficulty") or "Medium"
 
         # Create the actual recipe
         recipe = Recipe(

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/common/Button/Button';
+import { RecipeContent } from '../../components/recipe/RecipeContent';
 import { recipeDraftService } from '../../services/recipeDraftService';
 import { recipeService } from '../../services/recipeService';
 import type { RecipeDraft } from '../../types/recipe_draft.types';
@@ -181,32 +182,6 @@ export const DraftDetailPage = () => {
     const cookTime = content.cook_time || '0 minutes';
     const difficulty = content.difficulty || 'Medium';
 
-    // Generate markdown from structured data
-    const ingredientsMd = ingredients.length > 0
-      ? ingredients.map((ing: string) => `- ${ing}`).join('\n')
-      : '';
-    const instructionsMd = instructions.length > 0
-      ? instructions.map((inst: string, index: number) => `${index + 1}. ${inst}`).join('\n')
-      : '';
-    
-    const markdown = `# ${title}
-
-## Summary
-${summary}
-
-## Ingredients
-${ingredientsMd}
-
-## Instructions
-${instructionsMd}
-
-## Details
-- **Servings:** ${servings}
-- **Prep Time:** ${prepTime}
-- **Cook Time:** ${cookTime}
-- **Difficulty:** ${difficulty}
-`;
-
     return (
       <div className={styles.content}>
         <h2 className={styles.contentTitle}>{title}</h2>
@@ -217,10 +192,15 @@ ${instructionsMd}
         </div>
 
         <div className={styles.recipeDetails}>
-          <h3>Recipe Details</h3>
-          <div 
-            className={styles.markdownContent}
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(markdown) }}
+          <RecipeContent
+            ingredients={ingredients}
+            instructions={instructions}
+            servings={servings}
+            prep_time={prepTime}
+            cook_time={cookTime}
+            difficulty={difficulty}
+            showTitle={false}
+            showSummary={false}
           />
         </div>
       </div>
@@ -453,124 +433,3 @@ ${instructionsMd}
     </div>
   );
 };
-
-// Simple markdown to HTML renderer
-function renderMarkdown(markdown: string): string {
-  if (!markdown || markdown.trim() === '') {
-    return '<p>No content available</p>';
-  }
-
-  const lines = markdown.split('\n');
-  let html = '';
-  let inList = false;
-  let inOrderedList = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmedLine = line.trim();
-
-    if (trimmedLine === '') {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      continue;
-    }
-
-    // Headers
-    if (trimmedLine.startsWith('# ')) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      html += `<h1>${trimmedLine.substring(2)}</h1>`;
-      continue;
-    }
-    if (trimmedLine.startsWith('## ')) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      html += `<h2>${trimmedLine.substring(3)}</h2>`;
-      continue;
-    }
-    if (trimmedLine.startsWith('### ')) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      if (inOrderedList) {
-        html += '</ol>';
-        inOrderedList = false;
-      }
-      html += `<h3>${trimmedLine.substring(4)}</h3>`;
-      continue;
-    }
-
-    // Unordered lists
-    if (trimmedLine.startsWith('- ')) {
-      if (!inList && !inOrderedList) {
-        html += '<ul>';
-        inList = true;
-      } else if (inOrderedList) {
-        html += '</ol><ul>';
-        inOrderedList = false;
-        inList = true;
-      }
-      html += `<li>${trimmedLine.substring(2)}</li>`;
-      continue;
-    }
-
-    // Ordered lists
-    if (/^\d+\. /.test(trimmedLine)) {
-      if (!inOrderedList && !inList) {
-        html += '<ol>';
-        inOrderedList = true;
-      } else if (inList) {
-        html += '</ul><ol>';
-        inList = false;
-        inOrderedList = true;
-      }
-      const content = trimmedLine.replace(/^\d+\. /, '');
-      html += `<li>${content}</li>`;
-      continue;
-    }
-
-    if (inList) {
-      html += '</ul>';
-      inList = false;
-    }
-    if (inOrderedList) {
-      html += '</ol>';
-      inOrderedList = false;
-    }
-
-    let processedLine = trimmedLine
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-    html += `<p>${processedLine}</p>`;
-  }
-
-  if (inList) {
-    html += '</ul>';
-  }
-  if (inOrderedList) {
-    html += '</ol>';
-  }
-
-  return html;
-}

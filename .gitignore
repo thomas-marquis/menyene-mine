@@ -51,3 +51,4 @@ config/**/.env.*
 /bin
 /.coverage
 /.vscode
+/opencode.json
