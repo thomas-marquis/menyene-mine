@@ -15,5 +15,10 @@ class Recipe:
     title: str | None = None
     creation_date: datetime | None = None
     last_updated: datetime | None = None
-    content: str | None = None
     summary: str | None = None
+    ingredients: list[str] | None = None
+    instructions: list[str] | None = None
+    servings: int | None = None
+    prep_time: str | None = None
+    cook_time: str | None = None
+    difficulty: str | None = None

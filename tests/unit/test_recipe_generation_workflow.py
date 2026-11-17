@@ -53,8 +53,13 @@ def mock_recipe_generator() -> MagicMock:
     mock.generate_recipe = AsyncMock(
         return_value=Recipe(
             title="Test Recipe",
-            content="Test content",
             summary="Test summary",
+            ingredients=["ingredient 1", "ingredient 2"],
+            instructions=["step 1", "step 2"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Medium",
         )
     )
 
@@ -137,8 +142,9 @@ class TestRecipeGenerationWorkflow:
         # Check that recipe has expected fields
         recipe = result["recipe"]
         assert recipe.title is not None
-        assert recipe.content is not None
         assert recipe.summary is not None
+        assert recipe.ingredients is not None
+        assert recipe.instructions is not None
 
     @pytest.mark.asyncio
     async def test_generate_and_validate_success(self, mock_workflow: RecipeGenerationWorkflow) -> None:
@@ -212,7 +218,16 @@ class TestRecipeGenerationState:
 
     def test_state_with_all_fields(self) -> None:
         """Test state with all fields."""
-        recipe = Recipe(title="Test", content="Test content", summary="Test summary")
+        recipe = Recipe(
+            title="Test",
+            summary="Test summary",
+            ingredients=["ingredient 1"],
+            instructions=["step 1"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Medium",
+        )
         state: RecipeGenerationState = {
             "instruction": "Make a test",
             "validated_instruction": True,

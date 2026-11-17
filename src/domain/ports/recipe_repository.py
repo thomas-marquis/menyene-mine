@@ -35,3 +35,8 @@ class RecipeRepositoryPort(ABC):
     async def search(self, keyword: str, skip: int = 0, limit: int = 100) -> list[Recipe]:
         """Search recipes by keyword in title or content."""
         ...
+
+    @abstractmethod
+    async def update_instructions(self, recipe_id: int, instructions: list[str]) -> Recipe | None:
+        """Update only the instructions for a recipe."""
+        ...

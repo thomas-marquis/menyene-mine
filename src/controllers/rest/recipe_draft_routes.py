@@ -196,8 +196,13 @@ async def validate_draft_endpoint(
                 title=recipe.title,
                 creation_date=recipe.creation_date,
                 last_updated=recipe.last_updated,
-                content=recipe.content,
                 summary=recipe.summary,
+                ingredients=recipe.ingredients or [],
+                instructions=recipe.instructions or [],
+                servings=recipe.servings or 4,
+                prep_time=recipe.prep_time or "0 minutes",
+                cook_time=recipe.cook_time or "0 minutes",
+                difficulty=recipe.difficulty or "Medium",
             )
             if recipe
             else None,

@@ -174,7 +174,38 @@ export const DraftDetailPage = () => {
     const content = draft.generated_content;
     const title = content.title || 'Untitled Recipe';
     const summary = content.summary || 'No summary available';
-    const recipeContent = content.content || 'No content available';
+    const ingredients = content.ingredients || [];
+    const instructions = content.instructions || [];
+    const servings = content.servings || 4;
+    const prepTime = content.prep_time || '0 minutes';
+    const cookTime = content.cook_time || '0 minutes';
+    const difficulty = content.difficulty || 'Medium';
+
+    // Generate markdown from structured data
+    const ingredientsMd = ingredients.length > 0
+      ? ingredients.map((ing: string) => `- ${ing}`).join('\n')
+      : '';
+    const instructionsMd = instructions.length > 0
+      ? instructions.map((inst: string, index: number) => `${index + 1}. ${inst}`).join('\n')
+      : '';
+    
+    const markdown = `# ${title}
+
+## Summary
+${summary}
+
+## Ingredients
+${ingredientsMd}
+
+## Instructions
+${instructionsMd}
+
+## Details
+- **Servings:** ${servings}
+- **Prep Time:** ${prepTime}
+- **Cook Time:** ${cookTime}
+- **Difficulty:** ${difficulty}
+`;
 
     return (
       <div className={styles.content}>
@@ -189,40 +220,9 @@ export const DraftDetailPage = () => {
           <h3>Recipe Details</h3>
           <div 
             className={styles.markdownContent}
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(recipeContent) }}
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(markdown) }}
           />
         </div>
-
-        {content.ingredients && content.ingredients.length > 0 && (
-          <div className={styles.ingredients}>
-            <h3>Ingredients</h3>
-            <ul>
-              {content.ingredients.map((ingredient: string, index: number) => (
-                <li key={index}>{ingredient}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {content.instructions && content.instructions.length > 0 && (
-          <div className={styles.instructions}>
-            <h3>Instructions</h3>
-            <ol>
-              {content.instructions.map((instruction: string, index: number) => (
-                <li key={index}>{instruction}</li>
-              ))}
-            </ol>
-          </div>
-        )}
-
-        {content.servings && (
-          <div className={styles.meta}>
-            <span><strong>Servings:</strong> {content.servings}</span>
-            {content.prep_time && <span><strong>Prep Time:</strong> {content.prep_time}</span>}
-            {content.cook_time && <span><strong>Cook Time:</strong> {content.cook_time}</span>}
-            {content.difficulty && <span><strong>Difficulty:</strong> {content.difficulty}</span>}
-          </div>
-        )}
       </div>
     );
   };

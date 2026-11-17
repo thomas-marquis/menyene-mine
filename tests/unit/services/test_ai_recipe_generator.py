@@ -19,8 +19,9 @@ class TestRecipeAIGenerator:
         # Then
         assert isinstance(recipe, Recipe)
         assert recipe.title is not None
-        assert recipe.content is not None
         assert recipe.summary is not None
+        assert recipe.ingredients is not None
+        assert recipe.instructions is not None
 
     @pytest.mark.asyncio
     async def test_should_generate_recipe_with_required_fields(self) -> None:
@@ -32,11 +33,13 @@ class TestRecipeAIGenerator:
 
         # Then
         assert recipe.title is not None
-        assert recipe.content is not None
         assert recipe.summary is not None
+        assert recipe.ingredients is not None
+        assert recipe.instructions is not None
         assert isinstance(recipe.title, str)
-        assert isinstance(recipe.content, str)
         assert isinstance(recipe.summary, str)
+        assert isinstance(recipe.ingredients, list)
+        assert isinstance(recipe.instructions, list)
 
     @pytest.mark.asyncio
     async def test_should_generate_different_recipes_for_different_prompts(self) -> None:
@@ -54,5 +57,5 @@ class TestRecipeAIGenerator:
         assert (
             pasta_recipe.title != salad_recipe.title
             or pasta_recipe.summary != salad_recipe.summary
-            or pasta_recipe.content != salad_recipe.content
+            or pasta_recipe.ingredients != salad_recipe.ingredients
         )

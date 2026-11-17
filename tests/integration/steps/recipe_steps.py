@@ -32,8 +32,13 @@ def step_given_mocked_recipe_repository(context: Any) -> None:
         new_recipe = Recipe(
             id=new_id,
             title=recipe.title,
-            content=recipe.content,
             summary=recipe.summary,
+            ingredients=recipe.ingredients or [],
+            instructions=recipe.instructions or [],
+            servings=recipe.servings or 4,
+            prep_time=recipe.prep_time or "0 minutes",
+            cook_time=recipe.cook_time or "0 minutes",
+            difficulty=recipe.difficulty or "Medium",
             creation_date=now,
             last_updated=now,
         )
@@ -51,8 +56,13 @@ def step_given_mocked_recipe_repository(context: Any) -> None:
         updated_recipe = Recipe(
             id=recipe.id,
             title=recipe.title,
-            content=recipe.content,
             summary=recipe.summary,
+            ingredients=recipe.ingredients or [],
+            instructions=recipe.instructions or [],
+            servings=recipe.servings or 4,
+            prep_time=recipe.prep_time or "0 minutes",
+            cook_time=recipe.cook_time or "0 minutes",
+            difficulty=recipe.difficulty or "Medium",
             creation_date=existing.creation_date,
             last_updated=datetime.now(UTC),
         )
@@ -74,13 +84,36 @@ def step_given_mocked_recipe_repository(context: Any) -> None:
             recipe
             for recipe in context.mocked_recipes.values()
             if (recipe.title and keyword_lower in recipe.title.lower())
-            or (recipe.content and keyword_lower in recipe.content.lower())
+            or (recipe.summary and keyword_lower in recipe.summary.lower())
+            or any(keyword_lower in ing.lower() for ing in (recipe.ingredients or []))
         ][skip : skip + limit]
+
+    async def mock_update_instructions(recipe_id: int, instructions: list[str]) -> Recipe | None:
+        if recipe_id not in context.mocked_recipes:
+            return None
+        # Update only the instructions, preserve everything else
+        existing = context.mocked_recipes[recipe_id]
+        updated_recipe = Recipe(
+            id=existing.id,
+            title=existing.title,
+            summary=existing.summary,
+            ingredients=existing.ingredients or [],
+            instructions=instructions,
+            servings=existing.servings or 4,
+            prep_time=existing.prep_time or "0 minutes",
+            cook_time=existing.cook_time or "0 minutes",
+            difficulty=existing.difficulty or "Medium",
+            creation_date=existing.creation_date,
+            last_updated=datetime.now(UTC),
+        )
+        context.mocked_recipes[recipe_id] = updated_recipe
+        return updated_recipe
 
     # Configure mock methods
     mock_repo.create = mock_create
     mock_repo.get_by_id = mock_get_by_id
     mock_repo.update = mock_update
+    mock_repo.update_instructions = mock_update_instructions
     mock_repo.delete = mock_delete
     mock_repo.list_all = mock_list_all
     mock_repo.search = mock_search
@@ -93,12 +126,17 @@ def step_given_mocked_recipe_repository(context: Any) -> None:
         context.mocked_recipes = {}
 
 
-@given('I have a recipe payload with title "{title}", content "{content}", and summary "{summary}"')  # noqa: E501
-def step_given_recipe_payload(context: Any, title: str, content: str, summary: str) -> None:
+@given('I have a recipe payload with title "{title}" and summary "{summary}"')  # noqa: E501
+def step_given_recipe_payload(context: Any, title: str, summary: str) -> None:
     context.recipe_payload = {
         "title": title,
-        "content": content,
         "summary": summary,
+        "ingredients": ["ingredient 1", "ingredient 2"],
+        "instructions": ["step 1", "step 2"],
+        "servings": 4,
+        "prep_time": "10 minutes",
+        "cook_time": "20 minutes",
+        "difficulty": "Medium",
     }
 
 
@@ -113,12 +151,17 @@ def step_when_get(context: Any, path: str) -> None:
     context.response = context.client.get(path, follow_redirects=True)
 
 
-@when('I PUT to "{path}" with title "{title}", content "{content}", and summary "{summary}"')  # noqa: E501
-def step_when_put_recipe(context: Any, path: str, title: str, content: str, summary: str) -> None:
+@when('I PUT to "{path}" with title "{title}" and summary "{summary}"')  # noqa: E501
+def step_when_put_recipe(context: Any, path: str, title: str, summary: str) -> None:
     payload = {
         "title": title,
-        "content": content,
         "summary": summary,
+        "ingredients": ["updated ingredient"],
+        "instructions": ["updated step"],
+        "servings": 4,
+        "prep_time": "10 minutes",
+        "cook_time": "20 minutes",
+        "difficulty": "Medium",
     }
     context.response = context.client.put(path, json=payload, follow_redirects=True)
 
@@ -126,6 +169,15 @@ def step_when_put_recipe(context: Any, path: str, title: str, content: str, summ
 @when('I DELETE "{path}"')
 def step_when_delete(context: Any, path: str) -> None:
     context.response = context.client.delete(path, follow_redirects=True)
+
+
+@when('I PATCH to "{path}" with instructions {instructions_json}')
+def step_when_patch_instructions(context: Any, path: str, instructions_json: str) -> None:
+    import json
+
+    instructions = json.loads(instructions_json)
+    payload = {"instructions": instructions}
+    context.response = context.client.patch(path, json=payload, follow_redirects=True)
 
 
 # Then steps
@@ -158,16 +210,15 @@ def step_then_response_contains_summary(context: Any, summary: str) -> None:
         assert data["summary"] == summary
 
 
-@then('the response should contain the recipe with content "{content}"')
-def step_then_response_contains_content(context: Any, content: str) -> None:
+@then("the response should contain the recipe with ingredients")
+def step_then_response_contains_ingredients(context: Any) -> None:
     data = context.response.json()
     # Handle both single recipe and list of recipes
     if "recipes" in data:
         recipes = data["recipes"]
-        contents = [r["content"] for r in recipes]
-        assert content in contents, f"Content {content} not found in {contents}"
+        assert all("ingredients" in r for r in recipes)
     else:
-        assert data["content"] == content
+        assert "ingredients" in data
 
 
 @then("the response should contain a list of recipes")
@@ -209,18 +260,32 @@ def step_then_response_not_contains_title(context: Any, title: str) -> None:
         assert recipe["title"] != title
 
 
+@then("the response should contain instructions {instructions_json}")
+def step_then_response_contains_instructions(context: Any, instructions_json: str) -> None:
+    import json
+
+    expected_instructions = json.loads(instructions_json)
+    data = context.response.json()
+    assert data["instructions"] == expected_instructions
+
+
 # Helper steps for setting up test data
 @given(
-    'a recipe exists with id {recipe_id:d}, title "{title}", content "{content}", and summary "{summary}"'  # noqa: E501
+    'a recipe exists with id {recipe_id:d}, title "{title}", and summary "{summary}"'  # noqa: E501
 )
-def step_given_recipe_exists(context: Any, recipe_id: int, title: str, content: str, summary: str) -> None:  # noqa: E501
+def step_given_recipe_exists(context: Any, recipe_id: int, title: str, summary: str) -> None:  # noqa: E501
     # Create the recipe in the mock repository
     now = datetime.now(UTC)
     recipe = Recipe(
         id=recipe_id,
         title=title,
-        content=content,
         summary=summary,
+        ingredients=["ingredient 1", "ingredient 2"],
+        instructions=["step 1", "step 2"],
+        servings=4,
+        prep_time="10 minutes",
+        cook_time="20 minutes",
+        difficulty="Medium",
         creation_date=now,
         last_updated=now,
     )
@@ -234,24 +299,34 @@ def step_given_recipes_exist(context: Any, count: int) -> None:
         recipe = Recipe(
             id=i,
             title=f"Recipe {i}",
-            content=f"Content for recipe {i}",
             summary=f"Summary for recipe {i}",
+            ingredients=[f"ingredient {i}"],
+            instructions=[f"step {i}"],
+            servings=4,
+            prep_time="10 minutes",
+            cook_time="20 minutes",
+            difficulty="Medium",
             creation_date=now,
             last_updated=now,
         )
         context.mocked_recipes[i] = recipe
 
 
-@given('a recipe exists with title "{title}" and content "{content}"')
-def step_given_recipe_exists_simple(context: Any, title: str, content: str) -> None:
+@given('a recipe exists with title "{title}" and summary "{summary}"')
+def step_given_recipe_exists_simple(context: Any, title: str, summary: str) -> None:
     # Create the recipe in the mock repository
     now = datetime.now(UTC)
     new_id = len(context.mocked_recipes) + 1
     recipe = Recipe(
         id=new_id,
         title=title,
-        content=content,
-        summary=f"Summary for {title}",
+        summary=summary,
+        ingredients=["ingredient 1"],
+        instructions=["step 1"],
+        servings=4,
+        prep_time="10 minutes",
+        cook_time="20 minutes",
+        difficulty="Medium",
         creation_date=now,
         last_updated=now,
     )
@@ -265,8 +340,13 @@ def step_given_recipe_exists_by_id(context: Any, recipe_id: int) -> None:
     recipe = Recipe(
         id=recipe_id,
         title=f"Recipe {recipe_id}",
-        content=f"Content for recipe {recipe_id}",
         summary=f"Summary for recipe {recipe_id}",
+        ingredients=[f"ingredient {recipe_id}"],
+        instructions=[f"step {recipe_id}"],
+        servings=4,
+        prep_time="10 minutes",
+        cook_time="20 minutes",
+        difficulty="Medium",
         creation_date=now,
         last_updated=now,
     )

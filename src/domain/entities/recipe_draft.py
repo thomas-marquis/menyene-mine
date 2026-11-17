@@ -20,7 +20,7 @@ class RecipeDraft:
 
     id: int | None = None
     user_instruction: str | None = None
-    generated_content: dict[str, Any] | Recipe | None = None  # Contains title, content, summary
+    generated_content: dict[str, Any] | Recipe | None = None  # Contains structured recipe data
     status: RecipeDraftStatus = RecipeDraftStatus.DRAFT
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -36,7 +36,12 @@ class RecipeDraft:
         if isinstance(self.generated_content, Recipe):
             return {
                 "title": self.generated_content.title,
-                "content": self.generated_content.content,
                 "summary": self.generated_content.summary,
+                "ingredients": self.generated_content.ingredients,
+                "instructions": self.generated_content.instructions,
+                "servings": self.generated_content.servings,
+                "prep_time": self.generated_content.prep_time,
+                "cook_time": self.generated_content.cook_time,
+                "difficulty": self.generated_content.difficulty,
             }
         return self.generated_content or {}

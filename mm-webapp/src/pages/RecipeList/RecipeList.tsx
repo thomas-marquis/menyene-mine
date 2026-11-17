@@ -321,7 +321,7 @@ export const RecipeListPage = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Search recipes by title or content..."
+              placeholder="Search recipes by title, summary, ingredients..."
               value={searchQuery}
               onChange={handleSearchChange}
               disabled={loading}

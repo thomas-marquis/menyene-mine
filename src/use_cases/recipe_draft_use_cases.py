@@ -106,19 +106,34 @@ class RecipeDraftUseCases:
         if isinstance(draft.generated_content, Recipe):
             recipe_entity = draft.generated_content
             title = recipe_entity.title or "Untitled Recipe"
-            recipe_content = recipe_entity.content or ""
             summary = recipe_entity.summary or ""
+            ingredients = recipe_entity.ingredients or []
+            instructions = recipe_entity.instructions or []
+            servings = recipe_entity.servings or 4
+            prep_time = recipe_entity.prep_time or "0 minutes"
+            cook_time = recipe_entity.cook_time or "0 minutes"
+            difficulty = recipe_entity.difficulty or "Medium"
         else:
             content = draft.generated_content or {}
             title = content.get("title", "Untitled Recipe")
-            recipe_content = content.get("content", "")
             summary = content.get("summary", "")
+            ingredients = content.get("ingredients", [])
+            instructions = content.get("instructions", [])
+            servings = content.get("servings", 4)
+            prep_time = content.get("prep_time", "0 minutes")
+            cook_time = content.get("cook_time", "0 minutes")
+            difficulty = content.get("difficulty", "Medium")
 
         # Create the actual recipe
         recipe = Recipe(
             title=title,
-            content=recipe_content,
             summary=summary,
+            ingredients=ingredients,
+            instructions=instructions,
+            servings=servings,
+            prep_time=prep_time,
+            cook_time=cook_time,
+            difficulty=difficulty,
         )
         created_recipe = await self._recipe_repository.create(recipe)
 

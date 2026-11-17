@@ -54,26 +54,38 @@ class MockRecipeAIGenerator(RecipeGenerator):
         title = f"{self._random.choice(adjectives)} {main_keyword.capitalize()} {self._random.choice(nouns)}"
 
         # Generate ingredients
-        ingredients = self._generate_mock_ingredients(main_keyword)
+        ingredients_str = self._generate_mock_ingredients(main_keyword)
+        ingredients = [ing.strip("- ") for ing in ingredients_str.split("\n") if ing.strip()]
 
         # Generate instructions
-        instructions = self._generate_mock_instructions(main_keyword)
+        instructions_str = self._generate_mock_instructions(main_keyword)
+        raw_instructions = instructions_str.split("\n")
+        instructions = []
+        for inst in raw_instructions:
+            if inst.strip():
+                if ". " in inst:
+                    instructions.append(inst.split(". ", 1)[1].strip())
+                else:
+                    instructions.append(inst.strip())
 
         # Generate summary
         adjective = self._random.choice(adjectives).lower()
+        servings = self._random.randint(2, 6)
+        prep_time_minutes = self._random.randint(20, 90)
         summary = (
             f"A {adjective} {main_keyword} recipe that's perfect for any occasion. "
-            f"This dish serves {self._random.randint(2, 6)} and takes about "
-            f"{self._random.randint(20, 90)} minutes to prepare."
+            f"This dish serves {servings} and takes about {prep_time_minutes} minutes to prepare."
         )
-
-        # Generate content (full recipe in markdown format)
-        content = self._format_recipe_content(title, summary, ingredients, instructions)
 
         return RecipeEntity(
             title=title,
             summary=summary,
-            content=content,
+            ingredients=ingredients,
+            instructions=instructions,
+            servings=servings,
+            prep_time=f"{prep_time_minutes} minutes",
+            cook_time="30 minutes",
+            difficulty="Medium",
         )
 
     def _format_recipe_content(self, title: str, summary: str, ingredients: str, instructions: str) -> str:
