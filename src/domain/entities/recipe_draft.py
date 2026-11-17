@@ -1,9 +1,26 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import TypedDict
 
 from .recipe import Recipe
+
+
+class RecipeDraftContent(TypedDict, total=False):
+    """TypedDict representing the structure of generated recipe draft content.
+
+    This matches the frontend TypeScript RecipeDraftContent interface and
+    represents the JSON structure stored in the database.
+    """
+
+    title: str | None
+    summary: str | None
+    ingredients: list[str] | None
+    instructions: list[str] | None
+    servings: int | None
+    prep_time: str | None
+    cook_time: str | None
+    difficulty: str | None
 
 
 class RecipeDraftStatus(StrEnum):
@@ -20,13 +37,13 @@ class RecipeDraft:
 
     id: int | None = None
     user_instruction: str | None = None
-    generated_content: dict[str, Any] | Recipe | None = None  # Contains structured recipe data
+    generated_content: Recipe | RecipeDraftContent | None = None  # Structured recipe data or dict representation
     status: RecipeDraftStatus = RecipeDraftStatus.DRAFT
     created_at: datetime | None = None
     updated_at: datetime | None = None
     recipe_id: int | None = None  # Reference to the actual recipe if validated
 
-    def get_content_dict(self) -> dict[str, Any]:
+    def get_content_dict(self) -> RecipeDraftContent:
         """
         Get generated_content as a dictionary.
 

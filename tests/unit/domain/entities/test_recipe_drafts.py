@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.domain.entities.recipe_draft import RecipeDraft, RecipeDraftStatus
+from src.domain.entities.recipe_draft import RecipeDraft, RecipeDraftContent, RecipeDraftStatus
 
 
 class TestRecipeDraftEntity:
@@ -22,7 +22,7 @@ class TestRecipeDraftEntity:
     def test_should_create_draft_with_custom_values(self) -> None:
         # Given
         now = datetime.now()
-        custom_content = {"title": "Test Recipe", "content": "Test content"}
+        custom_content: RecipeDraftContent = {"title": "Test Recipe", "summary": "Test content"}
 
         # When
         draft = RecipeDraft(

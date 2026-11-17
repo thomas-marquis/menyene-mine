@@ -1,11 +1,11 @@
-from typing import Any
+from typing import cast
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...domain.entities.recipe import Recipe
 from ...domain.entities.recipe_draft import RecipeDraft as RecipeDraftEntity
-from ...domain.entities.recipe_draft import RecipeDraftStatus
+from ...domain.entities.recipe_draft import RecipeDraftContent, RecipeDraftStatus
 from ...domain.ports.recipe_draft_repository import RecipeDraftRepositoryPort
 from ..models.recipe_draft import RecipeDraft as RecipeDraftModel
 from ..models.recipe_draft import RecipeDraftStatus as ModelRecipeDraftStatus
@@ -33,7 +33,7 @@ class RecipeDraftRepositoryImpl(RecipeDraftRepositoryPort):
         return RecipeDraftEntity(
             id=draft_model.id,
             user_instruction=draft_model.user_instruction,
-            generated_content=draft_model.generated_content,
+            generated_content=cast(RecipeDraftContent, draft_model.generated_content),
             status=RecipeDraftStatus(draft_model.status),
             created_at=draft_model.created_at,
             updated_at=draft_model.updated_at,
@@ -49,7 +49,7 @@ class RecipeDraftRepositoryImpl(RecipeDraftRepositoryPort):
         return RecipeDraftEntity(
             id=draft_model.id,
             user_instruction=draft_model.user_instruction,
-            generated_content=draft_model.generated_content,
+            generated_content=cast(RecipeDraftContent, draft_model.generated_content),
             status=RecipeDraftStatus(draft_model.status),
             created_at=draft_model.created_at,
             updated_at=draft_model.updated_at,
@@ -66,7 +66,7 @@ class RecipeDraftRepositoryImpl(RecipeDraftRepositoryPort):
         if draft.user_instruction is not None:
             draft_model.user_instruction = draft.user_instruction
         if draft.generated_content is not None:
-            draft_model.generated_content = self._to_dict_content(draft.generated_content)
+            draft_model.generated_content = dict(self._to_dict_content(draft.generated_content))
         if draft.status is not None:
             draft_model.status = ModelRecipeDraftStatus(draft.status.value)
         if draft.recipe_id is not None:
@@ -77,7 +77,7 @@ class RecipeDraftRepositoryImpl(RecipeDraftRepositoryPort):
         return RecipeDraftEntity(
             id=draft_model.id,
             user_instruction=draft_model.user_instruction,
-            generated_content=draft_model.generated_content,
+            generated_content=cast(RecipeDraftContent, draft_model.generated_content),
             status=RecipeDraftStatus(draft_model.status),
             created_at=draft_model.created_at,
             updated_at=draft_model.updated_at,
@@ -112,7 +112,7 @@ class RecipeDraftRepositoryImpl(RecipeDraftRepositoryPort):
             RecipeDraftEntity(
                 id=r.id,
                 user_instruction=r.user_instruction,
-                generated_content=r.generated_content,
+                generated_content=cast(RecipeDraftContent, r.generated_content),
                 status=RecipeDraftStatus(r.status),
                 created_at=r.created_at,
                 updated_at=r.updated_at,
@@ -131,7 +131,7 @@ class RecipeDraftRepositoryImpl(RecipeDraftRepositoryPort):
         result = await self._session.execute(query)
         return result.scalar_one() or 0
 
-    def _to_dict_content(self, content: dict[str, Any] | Recipe | None) -> dict[str, Any]:
+    def _to_dict_content(self, content: Recipe | RecipeDraftContent | None) -> RecipeDraftContent:
         """
         Convert Recipe entity or dict to dict for database storage.
 
