@@ -508,11 +508,12 @@ export const RecipeFormModal = ({
                     <>
                       <div
                         className={styles.instructionRow}
-                        onMouseDown={(e) => handleMouseDown(originalIndex, e)}
-                      >
+                        >
                         <div className={styles.instructionInputContainer}>
                           <div className={styles.stepNumber}>{originalIndex + 1}.</div>
-                          <div className={styles.dragHandle} title="Drag to reorder">
+                          <div className={styles.dragHandle} 
+                              onMouseDown={(e) => handleMouseDown(originalIndex, e)}
+                              title="Drag to reorder">
                             <i className="bi bi-grip-vertical"></i>
                           </div>
                           <input
