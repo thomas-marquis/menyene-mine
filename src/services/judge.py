@@ -109,10 +109,8 @@ class LLMJudge(Judge):
             validation_result: InstructionValidationResult = response  # type: ignore[assignment]
 
             # Check if status exists and is valid
-            if not hasattr(validation_result, 'status') or validation_result.status is None:
-                raise InvalidInstructionError(
-                    "Invalid response from validation service. Please try again."
-                )
+            if not hasattr(validation_result, "status") or validation_result.status is None:
+                raise InvalidInstructionError("Invalid response from validation service. Please try again.")
 
             if validation_result.status.lower() == "valid":
                 return None

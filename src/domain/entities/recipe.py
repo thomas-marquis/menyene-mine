@@ -22,31 +22,3 @@ class Recipe:
     prep_time: str | None = None
     cook_time: str | None = None
     difficulty: str | None = None
-
-    def to_markdown(self) -> str:
-        """
-        Convert recipe to markdown format.
-
-        Returns:
-            Recipe formatted as markdown string
-        """
-        ingredients_md = "\n".join(f"- {ingredient}" for ingredient in (self.ingredients or []))
-        instructions_md = "\n".join(f"{i + 1}. {instruction}" for i, instruction in enumerate(self.instructions or []))
-
-        return f"""# {self.title or "Untitled Recipe"}
-
-## Summary
-{self.summary or ""}
-
-## Ingredients
-{ingredients_md}
-
-## Instructions
-{instructions_md}
-
-## Details
-- **Servings:** {self.servings or 4}
-- **Prep Time:** {self.prep_time or "0 minutes"}
-- **Cook Time:** {self.cook_time or "0 minutes"}
-- **Difficulty:** {self.difficulty or "Medium"}
-"""

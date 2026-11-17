@@ -174,7 +174,7 @@ def step_when_delete(context: Any, path: str) -> None:
 @when('I PATCH to "{path}" with instructions {instructions_json}')
 def step_when_patch_instructions(context: Any, path: str, instructions_json: str) -> None:
     import json
-    
+
     instructions = json.loads(instructions_json)
     payload = {"instructions": instructions}
     context.response = context.client.patch(path, json=payload, follow_redirects=True)
@@ -260,10 +260,10 @@ def step_then_response_not_contains_title(context: Any, title: str) -> None:
         assert recipe["title"] != title
 
 
-@then('the response should contain instructions {instructions_json}')
+@then("the response should contain instructions {instructions_json}")
 def step_then_response_contains_instructions(context: Any, instructions_json: str) -> None:
     import json
-    
+
     expected_instructions = json.loads(instructions_json)
     data = context.response.json()
     assert data["instructions"] == expected_instructions

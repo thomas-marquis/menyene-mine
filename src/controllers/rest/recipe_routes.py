@@ -136,7 +136,7 @@ async def reorder_instructions_endpoint(
     recipe_id: int, payload: RecipeInstructionsReorder, use_cases: RecipeUseCasesDep
 ) -> RecipeResponse:
     """Reorder instructions for a recipe via drag-and-drop.
-    
+
     This endpoint allows updating only the instructions array, maintaining
     the order specified by the user's drag-and-drop operation.
     """
