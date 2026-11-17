@@ -5,6 +5,7 @@ Centralizes the creation and injection of dependencies throughout the applicatio
 Uses FastAPI's Depends for automatic dependency injection.
 """
 
+from contextvars import ContextVar
 from typing import Annotated
 
 from fastapi import Depends
@@ -28,14 +29,18 @@ from .use_cases.recipe_generation_workflow import RecipeGenerationWorkflow
 from .use_cases.recipe_use_cases import RecipeUseCases
 
 # Global instances for singleton pattern
-recipe_repository: RecipeRepositoryPort | None = None
-recipe_use_cases: RecipeUseCases | None = None
-recipe_draft_repository: RecipeDraftRepositoryPort | None = None
-recipe_draft_use_cases: RecipeDraftUseCases | None = None
-grocery_repository: GroceryRepositoryPort | None = None
-grocery_use_cases: GroceryUseCases | None = None
-recipe_generation_workflow: RecipeGenerationWorkflow | None = None
-llm: BaseChatModel | None = None
+_recipe_repository: ContextVar[RecipeRepositoryPort | None] = ContextVar("recipe_repository", default=None)
+_recipe_use_cases: ContextVar[RecipeUseCases | None] = ContextVar("recipe_use_cases", default=None)
+_recipe_draft_repository: ContextVar[RecipeDraftRepositoryPort | None] = ContextVar(
+    "recipe_draft_repository", default=None
+)
+_recipe_draft_use_cases: ContextVar[RecipeDraftUseCases | None] = ContextVar("recipe_draft_use_cases", default=None)
+_grocery_repository: ContextVar[GroceryRepositoryPort | None] = ContextVar("grocery_repository", default=None)
+_grocery_use_cases: ContextVar[GroceryUseCases | None] = ContextVar("grocery_use_cases", default=None)
+_recipe_generation_workflow: ContextVar[RecipeGenerationWorkflow | None] = ContextVar(
+    "recipe_generation_workflow", default=None
+)
+_llm: ContextVar[BaseChatModel | None] = ContextVar("llm", default=None)
 
 
 def get_llm() -> BaseChatModel:
@@ -48,71 +53,67 @@ def get_llm() -> BaseChatModel:
         BaseChatModel: The LLM instance (ChatMistralAI or mock)
     """
 
-    global llm
-    if llm is None:
+    if _llm.get() is None:
         settings = get_settings()
 
         if not settings.mistral_api_key:
             raise RuntimeError("LLM init failed. Please provide a Mistral API key.")
 
-        llm = ChatMistralAI(
-            mistral_api_key=settings.mistral_api_key,
-            model=settings.ai_model,
-            temperature=settings.ai_temperature,
-            max_tokens=2000,
+        _llm.set(
+            ChatMistralAI(
+                mistral_api_key=settings.mistral_api_key,
+                model=settings.ai_model,
+                temperature=settings.ai_temperature,
+                max_tokens=2000,
+            )
         )
 
-    return llm
+    return _llm.get()  # type: ignore
 
 
 def get_recipe_repository(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> RecipeRepositoryPort:
     """Dependency for RecipeRepository."""
-    global recipe_repository
-    if recipe_repository is None:
-        recipe_repository = RecipeRepositoryImpl(session)
-    return recipe_repository
+    if _recipe_repository.get() is None:
+        _recipe_repository.set(RecipeRepositoryImpl(session))
+    return _recipe_repository.get()  # type: ignore
 
 
 def get_recipe_use_cases(
     repository: Annotated[RecipeRepositoryPort, Depends(get_recipe_repository)],
 ) -> RecipeUseCases:
     """Dependency for RecipeUseCases."""
-    global recipe_use_cases
-    if recipe_use_cases is None:
-        recipe_use_cases = RecipeUseCases(repository)
-    return recipe_use_cases
+    if _recipe_use_cases.get() is None:
+        _recipe_use_cases.set(RecipeUseCases(repository))
+    return _recipe_use_cases.get()  # type: ignore
 
 
 def get_grocery_repository(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> GroceryRepositoryPort:
     """Dependency for GroceryRepository."""
-    global grocery_repository
-    if grocery_repository is None:
-        grocery_repository = GroceryRepositoryImpl(session)
-    return grocery_repository
+    if _grocery_repository.get() is None:
+        _grocery_repository.set(GroceryRepositoryImpl(session))
+    return _grocery_repository.get()  # type: ignore
 
 
 def get_grocery_use_cases(
     repository: Annotated[GroceryRepositoryPort, Depends(get_grocery_repository)],
 ) -> GroceryUseCases:
     """Dependency for GroceryUseCases."""
-    global grocery_use_cases
-    if grocery_use_cases is None:
-        grocery_use_cases = GroceryUseCases(repository)
-    return grocery_use_cases
+    if _grocery_use_cases.get() is None:
+        _grocery_use_cases.set(GroceryUseCases(repository))
+    return _grocery_use_cases.get()  # type: ignore
 
 
 def get_recipe_draft_repository(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> RecipeDraftRepositoryPort:
     """Dependency for RecipeDraftRepository."""
-    global recipe_draft_repository
-    if recipe_draft_repository is None:
-        recipe_draft_repository = RecipeDraftRepositoryImpl(session)
-    return recipe_draft_repository
+    if _recipe_draft_repository.get() is None:
+        _recipe_draft_repository.set(RecipeDraftRepositoryImpl(session))
+    return _recipe_draft_repository.get()  # type: ignore
 
 
 def get_ai_recipe_generator() -> RecipeGenerator:
@@ -171,13 +172,14 @@ def get_recipe_generation_workflow(
         RecipeGenerationWorkflow: The workflow with injected dependencies
     """
 
-    global recipe_generation_workflow
-    if recipe_generation_workflow is None:
-        recipe_generation_workflow = RecipeGenerationWorkflow(
-            generator=generator,
-            judge=judge,
+    if _recipe_generation_workflow.get() is None:
+        _recipe_generation_workflow.set(
+            RecipeGenerationWorkflow(
+                generator=generator,
+                judge=judge,
+            )
         )
-    return recipe_generation_workflow
+    return _recipe_generation_workflow.get()  # type: ignore
 
 
 def get_recipe_draft_use_cases(
@@ -188,44 +190,41 @@ def get_recipe_draft_use_cases(
 ) -> RecipeDraftUseCases:
     """Dependency for RecipeDraftUseCases."""
 
-    global recipe_draft_use_cases
-    if recipe_draft_use_cases is None:
-        recipe_draft_use_cases = RecipeDraftUseCases(
-            draft_repository=draft_repository,
-            recipe_repository=recipe_repository,
-            recipe_generator=ai_generator,
-            judge=judge,
+    if _recipe_draft_use_cases.get() is None:
+        _recipe_draft_use_cases.set(
+            RecipeDraftUseCases(
+                draft_repository=draft_repository,
+                recipe_repository=recipe_repository,
+                recipe_generator=ai_generator,
+                judge=judge,
+            )
         )
-    return recipe_draft_use_cases
+    return _recipe_draft_use_cases.get()  # type: ignore
 
 
 def override_recipe_repository(
     impl: RecipeRepositoryPort,
 ) -> None:
     """Override dependency for RecipeRepository."""
-    global recipe_repository
-    recipe_repository = impl
+    _recipe_repository.set(impl)
 
 
 def override_recipe_draft_repository(
     impl: RecipeDraftRepositoryPort,
 ) -> None:
     """Override dependency for RecipeDraftRepository."""
-    global recipe_draft_repository
-    recipe_draft_repository = impl
+    _recipe_draft_repository.set(impl)
 
 
 def override_grocery_repository(
     impl: GroceryRepositoryPort,
 ) -> None:
     """Override dependency for GroceryRepository."""
-    global grocery_repository
-    grocery_repository = impl
+    _grocery_repository.set(impl)
 
 
 def override_llm(
     impl: BaseChatModel,
 ) -> None:
     """Override dependency for LLM."""
-    global llm
-    llm = impl
+    _llm.set(impl)
