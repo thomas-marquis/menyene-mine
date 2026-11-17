@@ -26,18 +26,6 @@
   margin-top: 0.25rem;
 }
 
-.markdownHelp {
-  margin-top: 0.5rem;
-  color: #6c757d;
-}
-
-.markdownHelp code {
-  background: #f8f9fa;
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px;
-  font-size: 0.85rem;
-}
-
 .formActions {
   display: flex;
   justify-content: flex-end;
