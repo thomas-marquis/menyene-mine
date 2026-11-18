@@ -5,8 +5,11 @@ import { RecipeDraftCard } from '../../components/recipe/RecipeDraftCard/RecipeD
 import { recipeDraftService } from '../../services/recipeDraftService';
 import type { RecipeDraft } from '../../types/recipe_draft.types';
 import { Container, Row, Col, Form, Alert, Spinner, Card, ListGroup } from 'react-bootstrap';
+import { useAppDispatch } from '../../store';
+import { incrementPendingDraftCount } from '../../store/statsSlice';
 
 export const RecipeGeneratorPage = () => {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [instruction, setInstruction] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -20,7 +23,7 @@ export const RecipeGeneratorPage = () => {
   };
 
   const handleGenerate = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: React.SubmitEvent) => {
       e.preventDefault();
 
       const trimmedInstruction = instruction.trim();
@@ -41,13 +44,13 @@ export const RecipeGeneratorPage = () => {
         });
 
         setDrafts(newDrafts);
+        dispatch(incrementPendingDraftCount());
         setSuccessMessage('Recipe draft generated successfully!');
       } catch (err: any) {
         console.error('Error generating drafts:', err);
         console.error('Error response:', err.response);
         console.error('Error request:', err.request);
         
-        // Extract error message from various error formats
         let errorMessage = 'Failed to generate recipe. Please try again.';
         
         if (err.response) {

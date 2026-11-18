@@ -98,3 +98,15 @@ class GroceryRepositoryImpl(GroceryRepositoryPort):
             )
             for gi in grocery_items
         ]
+
+    async def count_all(self) -> int:
+        """Count all grocery items."""
+        result = await self._session.execute(select(GroceryItemModel))
+        return len(result.scalars().all())
+
+    async def count_by_completed(self, is_completed: bool) -> int:
+        """Count grocery items by completion status."""
+        result = await self._session.execute(
+            select(GroceryItemModel).where(GroceryItemModel.is_completed == is_completed)
+        )
+        return len(result.scalars().all())

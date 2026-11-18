@@ -4,6 +4,8 @@ import { Modal } from '../../common/Modal/Modal';
 import { recipeService } from '../../../services/recipeService';
 import type { Recipe, RecipeCreate, RecipeUpdate } from '../../../types/recipe.types';
 import { Form, InputGroup, Row, Col, Alert, Badge } from 'react-bootstrap';
+import { useAppDispatch } from '../../../store';
+import { incrementRecipeCount } from '../../../store/statsSlice';
 
 interface RecipeFormModalProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ export const RecipeFormModal = ({
   onSuccess,
   recipe,
 }: RecipeFormModalProps) => {
+  const dispatch = useAppDispatch();
   const isEditMode = Boolean(recipe && recipe.id);
 
   // Form state with structured fields
@@ -315,6 +318,7 @@ export const RecipeFormModal = ({
         await recipeService.updateRecipe(recipe.id, submitData as RecipeUpdate);
       } else {
         await recipeService.createRecipe(submitData as RecipeCreate);
+        dispatch(incrementRecipeCount());
       }
       onSuccess();
     } catch (err: any) {

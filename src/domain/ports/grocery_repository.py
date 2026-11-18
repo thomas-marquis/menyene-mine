@@ -30,3 +30,13 @@ class GroceryRepositoryPort(ABC):
     async def list_all(self, skip: int = 0, limit: int = 100) -> list[GroceryItem]:
         """List all grocery items with pagination."""
         ...
+
+    @abstractmethod
+    async def count_all(self) -> int:
+        """Count all grocery items."""
+        ...
+
+    @abstractmethod
+    async def count_by_completed(self, is_completed: bool) -> int:
+        """Count grocery items by completion status."""
+        ...

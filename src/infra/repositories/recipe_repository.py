@@ -166,6 +166,11 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             for r in recipes
         ]
 
+    async def count_all(self) -> int:
+        """Count all recipes."""
+        result = await self._session.execute(select(RecipeModel))
+        return len(result.scalars().all())
+
     async def update_instructions(self, recipe_id: int, instructions: list[str]) -> RecipeEntity | None:
         """Update only the instructions for a recipe."""
         result = await self._session.execute(select(RecipeModel).where(RecipeModel.id == recipe_id))

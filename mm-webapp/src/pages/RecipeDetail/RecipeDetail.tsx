@@ -7,10 +7,13 @@ import { RecipeFormModal } from '../../components/recipe/RecipeFormModal/RecipeF
 import { recipeService } from '../../services/recipeService';
 import type { Recipe } from '../../types/recipe.types';
 import { Container, Alert, Spinner, Badge } from 'react-bootstrap';
+import { useAppDispatch } from '../../store';
+import { decrementRecipeCount } from '../../store/statsSlice';
 
 export const RecipeDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   
   // Check if ID is valid
   useEffect(() => {
@@ -107,6 +110,7 @@ export const RecipeDetailPage = () => {
     setError(null);
     try {
       await recipeService.deleteRecipe(parseInt(id, 10));
+      dispatch(decrementRecipeCount());
       setSuccessMessage('Recipe deleted successfully!');
       setTimeout(() => {
         navigate('/');

@@ -7,10 +7,13 @@ import { recipeDraftService } from '../../services/recipeDraftService';
 import { recipeService } from '../../services/recipeService';
 import type { RecipeDraft } from '../../types/recipe_draft.types';
 import { Container, Row, Col, Alert, Spinner, Card, Badge } from 'react-bootstrap';
+import { useAppDispatch } from '../../store';
+import { decrementPendingDraftCount, incrementRecipeCount } from '../../store/statsSlice';
 
 export const DraftDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   
   const [draft, setDraft] = useState<RecipeDraft | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +64,7 @@ export const DraftDetailPage = () => {
 
   const handleValidate = async () => {
     if (!id || !draft) return;
-
+    
     try {
       setIsValidating(true);
       setError(null);
@@ -72,6 +75,9 @@ export const DraftDetailPage = () => {
       if (response.success && response.recipe) {
         setSuccessMessage('Draft validated and recipe created successfully!');
         setDraft({ ...draft, status: 'validated', recipe_id: response.recipe.id });
+        
+        dispatch(decrementPendingDraftCount());
+        dispatch(incrementRecipeCount());
         
         // Refresh draft to get updated status
         await fetchDraft();
@@ -96,7 +102,7 @@ export const DraftDetailPage = () => {
 
   const handleReject = async () => {
     if (!id || !draft) return;
-
+    
     try {
       setIsRejecting(true);
       setError(null);
@@ -107,6 +113,7 @@ export const DraftDetailPage = () => {
       if (response.success) {
         setSuccessMessage('Draft rejected successfully!');
         setDraft({ ...draft, status: 'rejected' });
+        dispatch(decrementPendingDraftCount());
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError('Failed to reject draft. Please try again.');
@@ -121,10 +128,13 @@ export const DraftDetailPage = () => {
 
   const handleDelete = async () => {
     if (!id || !draft) return;
-
+    
     if (window.confirm('Are you sure you want to delete this draft? This action cannot be undone.')) {
       try {
         await recipeDraftService.deleteDraft(parseInt(id, 10));
+        if (draft.status === 'draft') {
+          dispatch(decrementPendingDraftCount());
+        }
         setSuccessMessage('Draft deleted successfully!');
         setTimeout(() => {
           navigate('/recipes/drafts');

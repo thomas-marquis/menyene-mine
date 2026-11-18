@@ -5,8 +5,11 @@ import { RecipeDraftCard } from '../../components/recipe/RecipeDraftCard/RecipeD
 import { recipeDraftService } from '../../services/recipeDraftService';
 import type { RecipeDraft, RecipeDraftStats } from '../../types/recipe_draft.types';
 import { Container, Row, Col, Alert, Spinner, Nav, Badge, Pagination } from 'react-bootstrap';
+import { useAppDispatch } from '../../store';
+import { incrementPendingDraftCount, decrementPendingDraftCount, setPendingDraftCount } from '../../store/statsSlice';
 
 export const DraftListPage = () => {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [drafts, setDrafts] = useState<RecipeDraft[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,12 +65,15 @@ export const DraftListPage = () => {
     navigate('/recipes/builder');
   };
 
-  const handleDeleteDraft = async (draftId: number, e: React.MouseEvent) => {
+  const handleDeleteDraft = async (draftId: number, status: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (window.confirm('Are you sure you want to delete this draft? This action cannot be undone.')) {
       try {
         await recipeDraftService.deleteDraft(draftId);
+        if (status === 'draft') {
+          dispatch(decrementPendingDraftCount());
+        }
         setSuccessMessage('Draft deleted successfully!');
         fetchDrafts(activeTab === 'all' ? undefined : activeTab);
         setTimeout(() => setSuccessMessage(null), 3000);
@@ -271,7 +277,7 @@ export const DraftListPage = () => {
                       <Button
                         variant="danger"
                         size="sm"
-                        onClick={(e) => handleDeleteDraft(draft.id, e)}
+                        onClick={(e) => handleDeleteDraft(draft.id, draft.status, e)}
                         title="Delete draft"
                         className="px-2 py-1"
                       >

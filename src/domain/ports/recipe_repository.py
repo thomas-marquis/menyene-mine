@@ -37,6 +37,11 @@ class RecipeRepositoryPort(ABC):
         ...
 
     @abstractmethod
+    async def count_all(self) -> int:
+        """Count all recipes."""
+        ...
+
+    @abstractmethod
     async def update_instructions(self, recipe_id: int, instructions: list[str]) -> Recipe | None:
         """Update only the instructions for a recipe."""
         ...

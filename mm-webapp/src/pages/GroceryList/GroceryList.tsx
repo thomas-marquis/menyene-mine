@@ -3,6 +3,8 @@ import { Button } from '../../components/common/Button/Button';
 import { groceryService } from '../../services/groceryService';
 import type { GroceryItem } from '../../types/grocery.types';
 import { Container, Row, Col, Form, Alert, Badge, ListGroup, Spinner } from 'react-bootstrap';
+import { useAppDispatch } from '../../store';
+import { incrementUncheckedGroceryCount, decrementUncheckedGroceryCount, setUncheckedGroceryCount } from '../../store/statsSlice';
 
 interface EditableItem extends GroceryItem {
   isEditing: boolean;
@@ -11,6 +13,7 @@ interface EditableItem extends GroceryItem {
 }
 
 export const GroceryListPage = () => {
+  const dispatch = useAppDispatch();
   const [groceryItems, setGroceryItems] = useState<EditableItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +68,7 @@ export const GroceryListPage = () => {
         quantity: newItemQuantity.trim() || null,
         is_completed: false,
       });
+      dispatch(incrementUncheckedGroceryCount());
       setNewItemName('');
       setNewItemQuantity('');
       await fetchGroceryItems();
@@ -86,11 +90,14 @@ export const GroceryListPage = () => {
     }
   };
 
-  const handleDeleteItem = async (id: number) => {
+  const handleDeleteItem = async (id: number, isCompleted: boolean) => {
     try {
       setLoading(true);
       setError(null);
       await groceryService.deleteGroceryItem(id);
+      if (!isCompleted) {
+        dispatch(decrementUncheckedGroceryCount());
+      }
       await fetchGroceryItems();
       setSuccessMessage('Grocery item deleted successfully!');
       setTimeout(() => {
@@ -114,11 +121,17 @@ export const GroceryListPage = () => {
     try {
       setLoading(true);
       setError(null);
+      const newCompletedStatus = !item.is_completed;
       await groceryService.updateGroceryItem(item.id, {
         name: item.name,
         quantity: item.quantity || undefined,
-        is_completed: !item.is_completed,
+        is_completed: newCompletedStatus,
       });
+      if (newCompletedStatus) {
+        dispatch(decrementUncheckedGroceryCount());
+      } else {
+        dispatch(incrementUncheckedGroceryCount());
+      }
       await fetchGroceryItems();
     } catch (err: any) {
       if (err.response) {
@@ -417,7 +430,7 @@ export const GroceryListPage = () => {
                       <i className="bi bi-pencil"></i>
                     </Button>
                     <Button
-                      onClick={() => handleDeleteItem(item.id)}
+                      onClick={() => handleDeleteItem(item.id, item.is_completed)}
                       variant="danger"
                       size="sm"
                       disabled={loading}

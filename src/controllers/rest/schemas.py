@@ -138,3 +138,42 @@ class RecipeDraftActionResponse(BaseModel):
     message: str
     draft: RecipeDraftResponse | None = None
     recipe: RecipeResponse | None = None
+
+
+class RecipeStatsResponse(BaseModel):
+    """Statistics for recipes."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    total_count: int
+
+
+class DraftStatsResponse(BaseModel):
+    """Statistics for recipe drafts by status."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    total_count: int
+    draft_count: int
+    validated_count: int
+    rejected_count: int
+
+
+class GroceryStatsResponse(BaseModel):
+    """Statistics for grocery items."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    total_count: int
+    active_count: int
+    completed_count: int
+
+
+class StatsResponse(BaseModel):
+    """Response schema for all resource statistics."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    recipes: RecipeStatsResponse
+    drafts: DraftStatsResponse
+    groceries: GroceryStatsResponse

@@ -1,3 +1,4 @@
+import asyncio
 from typing import cast
 
 from sqlalchemy import func, select
@@ -6,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...domain.entities.recipe import Recipe
 from ...domain.entities.recipe_draft import RecipeDraft as RecipeDraftEntity
 from ...domain.entities.recipe_draft import RecipeDraftContent, RecipeDraftStatus
+from ...domain.entities.stats import DraftStats
 from ...domain.ports.recipe_draft_repository import RecipeDraftRepositoryPort
 from ..models.recipe_draft import RecipeDraft as RecipeDraftModel
 from ..models.recipe_draft import RecipeDraftStatus as ModelRecipeDraftStatus
@@ -130,6 +132,21 @@ class RecipeDraftRepositoryImpl(RecipeDraftRepositoryPort):
 
         result = await self._session.execute(query)
         return result.scalar_one() or 0
+
+    async def get_status_counts(self) -> DraftStats:
+        """Get counts for all draft statuses."""
+        draft_count, validated_count, rejected_count = await asyncio.gather(
+            self.count_by_status(RecipeDraftStatus.DRAFT),
+            self.count_by_status(RecipeDraftStatus.VALIDATED),
+            self.count_by_status(RecipeDraftStatus.REJECTED),
+        )
+        total = draft_count + validated_count + rejected_count
+        return DraftStats(
+            total_count=total,
+            draft_count=draft_count,
+            validated_count=validated_count,
+            rejected_count=rejected_count,
+        )
 
     def _to_dict_content(self, content: Recipe | RecipeDraftContent | None) -> RecipeDraftContent:
         """
