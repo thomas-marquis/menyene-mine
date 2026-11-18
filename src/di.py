@@ -27,6 +27,7 @@ from .use_cases.grocery_use_cases import GroceryUseCases
 from .use_cases.recipe_draft_use_cases import RecipeDraftUseCases
 from .use_cases.recipe_generation_workflow import RecipeGenerationWorkflow
 from .use_cases.recipe_use_cases import RecipeUseCases
+from .use_cases.stats_use_cases import StatsUseCases
 
 # Global instances for singleton pattern
 _recipe_repository: ContextVar[RecipeRepositoryPort | None] = ContextVar("recipe_repository", default=None)
@@ -37,6 +38,7 @@ _recipe_draft_repository: ContextVar[RecipeDraftRepositoryPort | None] = Context
 _recipe_draft_use_cases: ContextVar[RecipeDraftUseCases | None] = ContextVar("recipe_draft_use_cases", default=None)
 _grocery_repository: ContextVar[GroceryRepositoryPort | None] = ContextVar("grocery_repository", default=None)
 _grocery_use_cases: ContextVar[GroceryUseCases | None] = ContextVar("grocery_use_cases", default=None)
+_stats_use_cases: ContextVar[StatsUseCases | None] = ContextVar("stats_use_cases", default=None)
 _recipe_generation_workflow: ContextVar[RecipeGenerationWorkflow | None] = ContextVar(
     "recipe_generation_workflow", default=None
 )
@@ -114,6 +116,23 @@ def get_recipe_draft_repository(
     if _recipe_draft_repository.get() is None:
         _recipe_draft_repository.set(RecipeDraftRepositoryImpl(session))
     return _recipe_draft_repository.get()  # type: ignore
+
+
+def get_stats_use_cases(
+    recipe_repository: Annotated[RecipeRepositoryPort, Depends(get_recipe_repository)],
+    draft_repository: Annotated[RecipeDraftRepositoryPort, Depends(get_recipe_draft_repository)],
+    grocery_repository: Annotated[GroceryRepositoryPort, Depends(get_grocery_repository)],
+) -> StatsUseCases:
+    """Dependency for StatsUseCases."""
+    if _stats_use_cases.get() is None:
+        _stats_use_cases.set(
+            StatsUseCases(
+                recipe_repository=recipe_repository,
+                draft_repository=draft_repository,
+                grocery_repository=grocery_repository,
+            )
+        )
+    return _stats_use_cases.get()  # type: ignore
 
 
 def get_ai_recipe_generator() -> RecipeGenerator:

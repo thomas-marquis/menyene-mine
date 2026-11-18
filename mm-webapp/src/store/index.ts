@@ -1,21 +1,21 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { useDispatch, type TypedUseSelectorHook, useSelector } from 'react-redux';
+import { configureStore } from "@reduxjs/toolkit";
+import {
+  useDispatch,
+  type TypedUseSelectorHook,
+  useSelector,
+} from "react-redux";
+import statsReducer from "./statsSlice";
 
 // Configure the store
-// For now, we don't need any slices since we're not implementing authentication
-// We'll keep the store structure for future use
-
 export const store = configureStore({
   reducer: {
-    // Add slices here when needed
+    stats: statsReducer,
   },
   middleware: (getDefaultMiddleware) => {
     return getDefaultMiddleware({
       serializableCheck: {
-        // Ignore these field paths in all actions
-        ignoredActionPaths: ['meta.arg', 'meta.baseQueryMeta'],
-        // Ignore these paths in the state
-        ignoredPaths: ['some.nested.path'],
+        ignoredActionPaths: [],
+        ignoredPaths: [],
       },
     });
   },

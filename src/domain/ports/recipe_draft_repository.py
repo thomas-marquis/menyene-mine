@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from ..entities.recipe_draft import RecipeDraft, RecipeDraftStatus
+from ..entities.stats import DraftStats
 
 
 class RecipeDraftRepositoryPort(ABC):
@@ -36,4 +37,9 @@ class RecipeDraftRepositoryPort(ABC):
     @abstractmethod
     async def count_by_status(self, status: RecipeDraftStatus | None = None) -> int:
         """Count recipe drafts by status."""
+        ...
+
+    @abstractmethod
+    async def get_status_counts(self) -> DraftStats:
+        """Get counts for all draft statuses."""
         ...
