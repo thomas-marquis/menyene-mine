@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../components/common/Button/Button';
 import { groceryService } from '../../services/groceryService';
 import type { GroceryItem } from '../../types/grocery.types';
-import styles from './GroceryList.module.css';
+import { Container, Row, Col, Form, Alert, Badge, ListGroup, Spinner } from 'react-bootstrap';
 
 interface EditableItem extends GroceryItem {
   isEditing: boolean;
@@ -228,21 +228,21 @@ export const GroceryListPage = () => {
 
   if (loading && groceryItems.length === 0) {
     return (
-      <div className={styles.loadingContainer}>
-        <div className="spinner-border text-primary" role="status">
+      <Container className="py-5 text-center">
+        <Spinner animation="border" variant="primary" role="status" className="mb-3">
           <span className="visually-hidden">Loading...</span>
-        </div>
+        </Spinner>
         <p>Loading grocery list...</p>
-      </div>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.errorContainer}>
-        <div className="alert alert-danger" role="alert">
+      <Container className="py-5 text-center">
+        <Alert variant="danger" className="mb-4">
           {error}
-        </div>
+        </Alert>
         <Button
           onClick={() => {
             setError(null);
@@ -253,27 +253,31 @@ export const GroceryListPage = () => {
         >
           {loading ? 'Loading...' : 'Retry'}
         </Button>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className={styles.groceryListContainer}>
+    <Container className="py-4">
       {successMessage && (
-        <div className="alert alert-success" role="alert">
+        <Alert variant="success" className="mb-4">
           {successMessage}
-        </div>
+        </Alert>
       )}
 
-      <div className={styles.header}>
-        <h1 className={styles.title}>Grocery List</h1>
+      {/* Header */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <h1 className="mb-0" style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50' }}>
+          Grocery List
+        </h1>
         {completedCount > 0 && (
           <Button
             onClick={handleClearCompleted}
             variant="danger"
-            size="small"
+            size="sm"
             disabled={loading}
-            className="btn-outline-danger"
+            className="btn-outline-danger text-white"
+            style={{ borderColor: '#dc3545' }}
           >
             <i className="bi bi-trash me-2"></i>
             Clear Completed ({completedCount})
@@ -281,78 +285,91 @@ export const GroceryListPage = () => {
         )}
       </div>
 
-      <div className={styles.stats}>
-        <span className={styles.stat}>
-          <span className={styles.statNumber}>{activeCount}</span> active
-        </span>
-        <span className={styles.stat}>
-          <span className={styles.statNumber}>{completedCount}</span> completed
-        </span>
-        <span className={styles.stat}>
-          <span className={styles.statNumber}>{groceryItems.length}</span> total
-        </span>
+      {/* Stats */}
+      <div className="d-flex gap-4 mb-4 flex-wrap">
+        <Badge bg="primary" className="p-2">
+          <span className="fw-bold">{activeCount}</span> active
+        </Badge>
+        <Badge bg="success" className="p-2">
+          <span className="fw-bold">{completedCount}</span> completed
+        </Badge>
+        <Badge bg="secondary" className="p-2">
+          <span className="fw-bold">{groceryItems.length}</span> total
+        </Badge>
       </div>
 
-      <form onSubmit={handleAddItem} className={styles.addForm}>
-        <div className={styles.inputGroup}>
-          <input
+      {/* Add Form */}
+      <Form onSubmit={handleAddItem} className="mb-4">
+        <div className="d-flex flex-column align-items-center gap-2">
+          <Form.Control
             type="text"
-            className="form-control"
             placeholder="Item name (required)"
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
             disabled={loading}
             required
+            className="w-100"
+            style={{ maxWidth: '400px' }}
           />
-          <input
+          <Form.Control
             type="text"
-            className="form-control"
             placeholder="Quantity (optional)"
             value={newItemQuantity}
             onChange={(e) => setNewItemQuantity(e.target.value)}
             disabled={loading}
+            className="w-100"
+            style={{ maxWidth: '400px' }}
           />
           <Button
             type="submit"
             variant="primary"
             disabled={loading || !newItemName.trim()}
+            className="w-100"
+            style={{ maxWidth: '400px' }}
           >
             <i className="bi bi-plus-lg me-2"></i>
             Add Item
           </Button>
         </div>
-      </form>
+      </Form>
 
+      {/* Grocery List */}
+      <Container className="mx-auto" style={{ maxWidth: '800px' }}>
       {groceryItems.length > 0 ? (
-        <div className={styles.groceryList}>
+        <ListGroup variant="flush">
           {groceryItems.map((item) => (
-            <div
+            <ListGroup.Item
               key={item.id}
-              className={`${styles.groceryItem} ${item.is_completed ? styles.completed : ''}`}
+              className={`border-0 border-bottom px-0 py-3 ${item.is_completed ? 'text-muted' : ''}`}
+              style={{ backgroundColor: 'transparent' }}
             >
               {item.isEditing ? (
-                <div className={styles.editForm}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={item.editName}
-                    onChange={(e) => handleEditFieldChange(item.id, 'editName', e.target.value)}
-                    disabled={loading}
-                    autoFocus
-                  />
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Quantity (optional)"
-                    value={item.editQuantity}
-                    onChange={(e) => handleEditFieldChange(item.id, 'editQuantity', e.target.value)}
-                    disabled={loading}
-                  />
-                  <div className={styles.editButtons}>
+                <Row className="g-2 align-items-center">
+                  <Col md={4}>
+                    <Form.Control
+                      type="text"
+                      value={item.editName}
+                      onChange={(e) => handleEditFieldChange(item.id, 'editName', e.target.value)}
+                      disabled={loading}
+                      autoFocus
+                      size="sm"
+                    />
+                  </Col>
+                  <Col md={3}>
+                    <Form.Control
+                      type="text"
+                      placeholder="Quantity (optional)"
+                      value={item.editQuantity}
+                      onChange={(e) => handleEditFieldChange(item.id, 'editQuantity', e.target.value)}
+                      disabled={loading}
+                      size="sm"
+                    />
+                  </Col>
+                  <Col md={5} className="d-flex gap-2 justify-content-end">
                     <Button
                       onClick={() => handleSaveEdit(item.id)}
                       variant="primary"
-                      size="small"
+                      size="sm"
                       disabled={loading || !item.editName.trim()}
                     >
                       <i className="bi bi-check-lg"></i>
@@ -360,64 +377,71 @@ export const GroceryListPage = () => {
                     <Button
                       onClick={() => handleCancelEdit(item.id)}
                       variant="secondary"
-                      size="small"
+                      size="sm"
                       disabled={loading}
                     >
                       <i className="bi bi-x-lg"></i>
                     </Button>
-                  </div>
-                </div>
+                  </Col>
+                </Row>
               ) : (
-                <>
-                  <div className={styles.itemContent}>
-                    <input
+                <Row className="g-2 align-items-center">
+                  <Col className="d-flex align-items-center gap-2">
+                    <Form.Check
                       type="checkbox"
                       checked={item.is_completed}
                       onChange={() => handleToggleCompletion(item)}
                       disabled={loading}
-                      className={styles.checkbox}
+                      id={`item-${item.id}`}
+                      className="mt-0"
                     />
-                    <div className={styles.itemDetails}>
-                      <span className={styles.itemName}>{item.name}</span>
+                    <div>
+                      <span className={`fw-medium ${item.is_completed ? 'text-decoration-line-through' : ''}`}>
+                        {item.name}
+                      </span>
                       {item.quantity && (
-                        <span className={styles.itemQuantity}> - {item.quantity}</span>
+                        <span className={`text-muted ms-2 ${item.is_completed ? 'text-decoration-line-through' : ''}`}>
+                          - {item.quantity}
+                        </span>
                       )}
                     </div>
-                  </div>
-                  <div className={styles.actionButtons}>
+                  </Col>
+                  <Col className="d-flex gap-2 justify-content-end">
                     <Button
                       onClick={() => handleStartEdit(item.id)}
                       variant="outline"
-                      size="small"
+                      size="sm"
                       disabled={loading}
-                      className={styles.editButton}
+                      className="px-2 py-1"
                     >
                       <i className="bi bi-pencil"></i>
                     </Button>
                     <Button
                       onClick={() => handleDeleteItem(item.id)}
                       variant="danger"
-                      size="small"
+                      size="sm"
                       disabled={loading}
-                      className={`${styles.deleteButton} btn-outline-danger`}
+                      className="px-2 py-1 btn-outline-danger text-white"
+                      style={{ borderColor: '#dc3545' }}
                     >
                       <i className="bi bi-trash"></i>
                     </Button>
-                  </div>
-                </>
+                  </Col>
+                </Row>
               )}
-            </div>
+            </ListGroup.Item>
           ))}
-        </div>
+        </ListGroup>
       ) : (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>
+        <Container className="py-5 text-center">
+          <div className="mb-4">
             <i className="bi bi-cart text-muted" style={{ fontSize: '4rem' }}></i>
           </div>
-          <h3>Your grocery list is empty</h3>
-          <p>Start by adding items to your grocery list!</p>
-        </div>
+          <h3 className="mb-2">Your grocery list is empty</h3>
+          <p className="text-muted mb-4">Start by adding items to your grocery list!</p>
+        </Container>
       )}
-    </div>
+      </Container>
+    </Container>
   );
 };

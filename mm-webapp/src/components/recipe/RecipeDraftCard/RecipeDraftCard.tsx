@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { RecipeDraft } from '../../../types/recipe_draft.types';
-import styles from './RecipeDraftCard.module.css';
+import { Card, Badge } from 'react-bootstrap';
 
 interface RecipeDraftCardProps {
   draft: RecipeDraft;
@@ -8,25 +8,36 @@ interface RecipeDraftCardProps {
   showStatusBadge?: boolean;
 }
 
+// Map status to Bootstrap badge variant
+const getStatusVariant = (status: string): string => {
+  switch (status) {
+    case 'validated':
+      return 'success';
+    case 'rejected':
+      return 'danger';
+    default:
+      return 'warning';
+  }
+};
+
+// Map status to display text
+const getStatusText = (status: string): string => {
+  switch (status) {
+    case 'validated':
+      return 'Validated';
+    case 'rejected':
+      return 'Rejected';
+    default:
+      return 'Draft';
+  }
+};
+
 export const RecipeDraftCard = ({ 
   draft, 
   onView, 
   showStatusBadge = false 
 }: RecipeDraftCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
-
-  const getStatusBadge = (status: string) => {
-    if (!showStatusBadge) return null;
-    
-    switch (status) {
-      case 'validated':
-        return <span className="badge bg-success">Validated</span>;
-      case 'rejected':
-        return <span className="badge bg-danger">Rejected</span>;
-      default:
-        return <span className="badge bg-warning text-dark">Draft</span>;
-    }
-  };
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -47,8 +58,8 @@ export const RecipeDraftCard = ({
     : summary;
 
   return (
-    <div
-      className={styles.card}
+    <Card
+      className="h-100 shadow-sm cursor-pointer border-0"
       onClick={onView}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -60,51 +71,59 @@ export const RecipeDraftCard = ({
           onView();
         }
       }}
+      style={{ borderRadius: '8px', border: '1px solid #e9ecef' }}
     >
-      <div className={styles.cardHeader}>
-        <h3 className={styles.cardTitle}>{title}</h3>
-        {showStatusBadge && (
-          <div className={styles.statusBadge}>
-            {getStatusBadge(draft.status)}
-          </div>
-        )}
-      </div>
+      <Card.Body className="p-3">
+        <div className="d-flex justify-content-between align-items-start mb-2">
+          <Card.Title className="mb-0 text-truncate" style={{ fontSize: '1.1rem', fontWeight: 600, color: '#2c3e50' }}>
+            {title}
+          </Card.Title>
+          {showStatusBadge && (
+            <Badge bg={getStatusVariant(draft.status)} className="text-dark">
+              {getStatusText(draft.status)}
+            </Badge>
+          )}
+        </div>
 
-      <div className={styles.cardBody}>
-        <p className={styles.cardSummary}>{truncatedSummary}</p>
+        <Card.Text className="text-muted mb-3" style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
+          {truncatedSummary}
+        </Card.Text>
         
-        <div className={styles.cardMeta}>
-          <span className={styles.metaItem}>
-            <i className="bi bi-calendar me-1"></i>
+        <div className="d-flex flex-wrap gap-3 mb-2 text-muted small">
+          <span className="d-flex align-items-center gap-1">
+            <i className="bi bi-calendar"></i>
             {formatDate(draft.created_at)}
           </span>
-          <span className={styles.metaItem}>
-            <i className="bi bi-file-earmark-text me-1"></i>
+          <span className="d-flex align-items-center gap-1">
+            <i className="bi bi-file-earmark-text"></i>
             Draft #{draft.id}
           </span>
         </div>
-      </div>
 
-      <div className={styles.cardFooter}>
-        <span className={styles.promptPreview}>
-          <i className="bi bi-chat-left-quote me-1"></i>
-          {draft.user_instruction.length > 50 
-            ? `${draft.user_instruction.substring(0, 50)}...` 
-            : draft.user_instruction}
-        </span>
-        
-        <div className={styles.viewIndicator}>
-          <i className="bi bi-eye me-1"></i>
-          {isHovered ? 'Click to view' : 'View details'}
+        <div className="border-top pt-2 mt-2">
+          <div className="d-flex justify-content-between align-items-center">
+            <span className="text-muted small d-flex align-items-center gap-1">
+              <i className="bi bi-chat-left-quote"></i>
+              {draft.user_instruction.length > 50 
+                ? `${draft.user_instruction.substring(0, 50)}...` 
+                : draft.user_instruction}
+            </span>
+            <span className="text-primary small d-flex align-items-center gap-1">
+              <i className="bi bi-eye"></i>
+              {isHovered ? 'Click to view' : 'View details'}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {draft.recipe_id && (
-        <div className={styles.recipeLink}>
-          <i className="bi bi-link-45deg me-1"></i>
-          Recipe #{draft.recipe_id}
-        </div>
-      )}
-    </div>
+        {draft.recipe_id && (
+          <div className="border-top pt-2 mt-2 text-center">
+            <Badge bg="light" text="primary" className="p-2">
+              <i className="bi bi-link-45deg me-1"></i>
+              Recipe #{draft.recipe_id}
+            </Badge>
+          </div>
+        )}
+      </Card.Body>
+    </Card>
   );
 };

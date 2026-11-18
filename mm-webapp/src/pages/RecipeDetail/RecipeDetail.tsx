@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/common/Button/Button';
+import { Modal } from '../../components/common/Modal/Modal';
 import { RecipeContent } from '../../components/recipe/RecipeContent';
 import { RecipeFormModal } from '../../components/recipe/RecipeFormModal/RecipeFormModal';
 import { recipeService } from '../../services/recipeService';
 import type { Recipe } from '../../types/recipe.types';
-import styles from './RecipeDetail.module.css';
+import { Container, Alert, Spinner, Badge } from 'react-bootstrap';
 
 export const RecipeDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,7 @@ export const RecipeDetailPage = () => {
       navigate('/404');
     }
   }, [id, navigate]);
+  
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -137,22 +139,22 @@ export const RecipeDetailPage = () => {
 
   if (loading) {
     return (
-      <div className={styles.loadingContainer}>
-        <div className="spinner-border text-primary" role="status">
+      <Container className="py-5 text-center">
+        <Spinner animation="border" variant="primary" role="status" className="mb-3">
           <span className="visually-hidden">Loading...</span>
-        </div>
+        </Spinner>
         <p>Loading recipe...</p>
-      </div>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.errorContainer}>
-        <div className="alert alert-danger" role="alert">
+      <Container className="py-5 text-center">
+        <Alert variant="danger" className="mb-4">
           {error}
-        </div>
-        <div className={styles.errorActions}>
+        </Alert>
+        <div className="d-flex justify-content-center gap-2">
           <Button
             onClick={() => {
               setError(null);
@@ -163,57 +165,58 @@ export const RecipeDetailPage = () => {
           >
             {loading ? 'Loading...' : 'Retry'}
           </Button>
-          <Button onClick={handleGoBack} variant="secondary" disabled={loading} className="ms-2">
+          <Button onClick={handleGoBack} variant="secondary" disabled={loading}>
             Back to Recipes
           </Button>
         </div>
-      </div>
+      </Container>
     );
   }
 
   if (successMessage && !recipe) {
     return (
-      <div className={styles.successContainer}>
-        <div className="alert alert-success" role="alert">
+      <Container className="py-5 text-center">
+        <Alert variant="success" className="mb-4">
           {successMessage}
-        </div>
+        </Alert>
         <Button onClick={() => navigate('/')} variant="primary">
           Back to Recipes
         </Button>
-      </div>
+      </Container>
     );
   }
 
   if (!recipe) {
     return (
-      <div className={styles.errorContainer}>
-        <div className="alert alert-warning" role="alert">
+      <Container className="py-5 text-center">
+        <Alert variant="warning" className="mb-4">
           Recipe not found
-        </div>
+        </Alert>
         <Button onClick={handleGoBack} variant="secondary" disabled={loading}>
           Back to Recipes
         </Button>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className={styles.recipeDetailContainer}>
-      <div className={styles.header}>
+    <Container className="py-4">
+      {/* Header with actions */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
         <Button
           onClick={handleGoBack}
           variant="outline"
-          size="medium"
+          size="md"
           disabled={loading}
         >
           <i className="bi bi-arrow-left me-2"></i>
           Back to Recipes
         </Button>
-        <div className={styles.actionButtons}>
+        <div className="d-flex gap-2">
           <Button
             onClick={handleEdit}
             variant="secondary"
-            size="medium"
+            size="md"
             disabled={loading}
           >
             <i className="bi bi-pencil me-2"></i>
@@ -222,8 +225,7 @@ export const RecipeDetailPage = () => {
           <Button
             onClick={handleDelete}
             variant="danger"
-            size="medium"
-            className="ms-2"
+            size="md"
             disabled={loading}
           >
             <i className="bi bi-trash me-2"></i>
@@ -232,30 +234,36 @@ export const RecipeDetailPage = () => {
         </div>
       </div>
 
-      <div className={styles.recipeContent}>
+      {/* Recipe Content */}
+      <div className="mb-4">
         {successMessage && (
-          <div className="alert alert-success" role="alert">
+          <Alert variant="success" className="mb-4">
             {successMessage}
-          </div>
+          </Alert>
         )}
-        <h1 className={styles.title}>{recipe.title}</h1>
+        
+        <h1 className="mb-3" style={{ fontSize: '2.5rem', fontWeight: 700, color: '#2c3e50' }}>
+          {recipe.title}
+        </h1>
 
-        <div className={styles.meta}>
-          <span className={styles.date}>
+        <div className="d-flex flex-wrap gap-3 mb-4 text-muted small">
+          <Badge bg="light" text="secondary" className="p-2">
             <i className="bi bi-calendar me-2"></i>
             Created: {formatDate(recipe.creation_date)}
-          </span>
-          <span className={styles.date}>
+          </Badge>
+          <Badge bg="light" text="secondary" className="p-2">
             <i className="bi bi-clock me-2"></i>
             Updated: {formatDate(recipe.last_updated)}
-          </span>
+          </Badge>
         </div>
 
-        <div className={styles.summary}>
-          <p>{recipe.summary}</p>
+        <div className="mb-4">
+          <p className="lead" style={{ color: '#7f8c8d' }}>
+            {recipe.summary}
+          </p>
         </div>
 
-        <div className={styles.content}>
+        <div className="border-top pt-4">
           <RecipeContent
             title={recipe.title}
             summary={recipe.summary}
@@ -271,6 +279,7 @@ export const RecipeDetailPage = () => {
         </div>
       </div>
 
+      {/* Edit Modal */}
       {showEditModal && (
         <RecipeFormModal
           isOpen={showEditModal}
@@ -280,43 +289,35 @@ export const RecipeDetailPage = () => {
         />
       )}
 
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="modal show" style={{ display: 'block' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirm Deletion</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleCloseDeleteConfirm}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>Are you sure you want to delete "{recipe.title}"? This action cannot be undone.</p>
-              </div>
-              <div className="modal-footer">
-                <Button
-                  onClick={handleCloseDeleteConfirm}
-                  variant="secondary"
-                  disabled={deleting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleConfirmDelete}
-                  variant="danger"
-                  className="ms-2"
-                  loading={deleting}
-                  disabled={deleting}
-                >
-                  Delete
-                </Button>
-              </div>
-            </div>
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={handleCloseDeleteConfirm}
+          title="Confirm Deletion"
+          closeOnOverlayClick={!deleting}
+          closeOnEscape={!deleting}
+        >
+          <p>Are you sure you want to delete "{recipe.title}"? This action cannot be undone.</p>
+          <div className="d-flex justify-content-end gap-2 mt-4">
+            <Button
+              onClick={handleCloseDeleteConfirm}
+              variant="secondary"
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              variant="danger"
+              loading={deleting}
+              disabled={deleting}
+            >
+              Delete
+            </Button>
           </div>
-        </div>
+        </Modal>
       )}
-    </div>
+    </Container>
   );
 };

@@ -4,7 +4,7 @@ import { Button } from '../../components/common/Button/Button';
 import { RecipeDraftCard } from '../../components/recipe/RecipeDraftCard/RecipeDraftCard';
 import { recipeDraftService } from '../../services/recipeDraftService';
 import type { RecipeDraft } from '../../types/recipe_draft.types';
-import styles from './RecipeBuilder.module.css';
+import { Container, Row, Col, Form, Alert, Spinner, Card, ListGroup } from 'react-bootstrap';
 
 export const RecipeBuilderPage = () => {
   const navigate = useNavigate();
@@ -18,8 +18,6 @@ export const RecipeBuilderPage = () => {
     setInstruction(e.target.value);
     setError(null);
   };
-
-
 
   const handleGenerate = useCallback(
     async (e: React.FormEvent) => {
@@ -91,155 +89,161 @@ export const RecipeBuilderPage = () => {
   // Show loading state if we're waiting for the first generation
   if (isGenerating && drafts.length === 0 && !error && !successMessage) {
     return (
-      <div className={styles.builderContainer}>
-        <div className={styles.header}>
-          <Button onClick={handleGoBack} variant="outline" size="medium" disabled={true}>
+      <Container className="py-4">
+        <div className="d-flex align-items-center mb-4">
+          <Button onClick={handleGoBack} variant="outline" size="md" disabled={true} className="me-3">
             <i className="bi bi-arrow-left me-2"></i>
             Back to Recipes
           </Button>
           
-          <div className={styles.headerContent}>
-            <h1 className={styles.title}>
-              <i className="bi bi-robot me-3"></i>
+          <div>
+            <h1 className="mb-1 d-flex align-items-center gap-2" style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50' }}>
+              <i className="bi bi-robot"></i>
               AI Recipe Builder
             </h1>
-            <p className={styles.subtitle}>
+            <p className="text-muted mb-0">
               Describe what you want to cook, and our AI will generate recipe ideas for you!
             </p>
           </div>
         </div>
         
-        <div className={styles.loadingContainer}>
-          <div className="spinner-border text-primary" role="status">
+        <div className="py-5 text-center">
+          <Spinner animation="border" variant="primary" role="status" className="mb-3">
             <span className="visually-hidden">Generating...</span>
-          </div>
-          <p className="mt-2">Generating your recipes...</p>
+          </Spinner>
+          <p>Generating your recipes...</p>
         </div>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className={styles.builderContainer}>
-      <div className={styles.header}>
-        <Button onClick={handleGoBack} variant="outline" size="medium" disabled={isGenerating}>
+    <Container className="py-4">
+      <div className="d-flex align-items-center mb-4">
+        <Button onClick={handleGoBack} variant="outline" size="md" disabled={isGenerating} className="me-3">
           <i className="bi bi-arrow-left me-2"></i>
           Back to Recipes
         </Button>
         
-        <div className={styles.headerContent}>
-          <h1 className={styles.title}>
-            <i className="bi bi-robot me-3"></i>
+        <div>
+          <h1 className="mb-1 d-flex align-items-center gap-2" style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50' }}>
+            <i className="bi bi-robot"></i>
             AI Recipe Builder
           </h1>
-          <p className={styles.subtitle}>
+          <p className="text-muted mb-0">
             Describe what you want to cook, and our AI will generate recipe ideas for you!
           </p>
         </div>
       </div>
 
       {successMessage && (
-        <div className="alert alert-success" role="alert">
+        <Alert variant="success" className="mb-4">
           {successMessage}
-        </div>
+        </Alert>
       )}
 
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <Alert variant="danger" className="mb-4">
           <strong>Error:</strong> {error}
-        </div>
+        </Alert>
       )}
 
-      <div className={styles.generatorForm}>
-        <form onSubmit={handleGenerate}>
-          <div className="mb-3">
-            <label htmlFor="instruction" className="form-label">
-              <strong>Describe your recipe idea:</strong>
-            </label>
-            <textarea
-              id="instruction"
-              className="form-control"
-              rows={4}
-              value={instruction}
-              onChange={handleInstructionChange}
-              placeholder="e.g., Create a quick vegetarian pasta dish with tomatoes and basil..."
-              disabled={isGenerating}
-            />
-            <div className="form-text">
-              Be as specific as you like! The AI will generate recipes based on your description.
+      <Card className="mb-4">
+        <Card.Body>
+          <Form onSubmit={handleGenerate}>
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="instruction" className="fw-semibold">
+                Describe your recipe idea:
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                id="instruction"
+                rows={4}
+                value={instruction}
+                onChange={handleInstructionChange}
+                placeholder="e.g., Create a quick vegetarian pasta dish with tomatoes and basil..."
+                disabled={isGenerating}
+              />
+              <Form.Text className="text-muted">
+                Be as specific as you like! The AI will generate recipes based on your description.
+              </Form.Text>
+            </Form.Group>
+
+            <div className="d-flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                disabled={isGenerating || !instruction.trim()}
+                loading={isGenerating}
+              >
+                <i className="bi bi-magic me-2"></i>
+                {isGenerating ? 'Generating...' : 'Generate Recipe'}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={handleViewAllDrafts}
+                disabled={isGenerating}
+              >
+                <i className="bi bi-folder me-2"></i>
+                View All Drafts
+              </Button>
             </div>
-          </div>
+          </Form>
+        </Card.Body>
+      </Card>
 
-
-
-          <div className={styles.buttonGroup}>
-            <Button
-              type="submit"
-              variant="primary"
-              size="large"
-              disabled={isGenerating || !instruction.trim()}
-              loading={isGenerating}
-            >
-              <i className="bi bi-magic me-2"></i>
-              {isGenerating ? 'Generating...' : 'Generate Recipe'}
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="large"
-              onClick={handleViewAllDrafts}
-              disabled={isGenerating}
-            >
-              <i className="bi bi-folder me-2"></i>
-              View All Drafts
-            </Button>
-          </div>
-        </form>
-      </div>
-
-      <div className={styles.examplesSection}>
-        <h3 className={styles.examplesTitle}>
-          <i className="bi bi-lightbulb me-2"></i>
-          Need inspiration? Try these examples:
-        </h3>
-        <div className={styles.examplesGrid}>
-          {examplePrompts.map((example, index) => (
-            <button
-              key={index}
-              type="button"
-              className={styles.exampleButton}
-              onClick={() => handleUseExample(example)}
-              disabled={isGenerating}
-            >
-              <i className="bi bi-arrow-right-circle me-2"></i>
-              {example}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Card className="mb-4">
+        <Card.Body>
+          <h3 className="mb-3 d-flex align-items-center gap-2" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#2c3e50' }}>
+            <i className="bi bi-lightbulb"></i>
+            Need inspiration? Try these examples:
+          </h3>
+          <ListGroup variant="flush">
+            {examplePrompts.map((example, index) => (
+              <ListGroup.Item
+                key={index}
+                className="border-0 px-0 py-2"
+                style={{ backgroundColor: 'transparent', cursor: 'pointer' }}
+                onClick={() => handleUseExample(example)}
+                disabled={isGenerating}
+                action
+              >
+                <div className="d-flex align-items-center gap-2 text-primary">
+                  <i className="bi bi-arrow-right-circle"></i>
+                  <span>{example}</span>
+                </div>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Card.Body>
+      </Card>
 
       {drafts.length > 0 && (
-        <div className={styles.resultsSection}>
-          <h2 className={styles.resultsTitle}>
-            <i className="bi bi-file-earmark-text me-2"></i>
+        <div className="mt-4">
+          <h2 className="mb-3 d-flex align-items-center gap-2" style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2c3e50' }}>
+            <i className="bi bi-file-earmark-text"></i>
             Generated Recipe Drafts
           </h2>
-          <p className={styles.resultsSubtitle}>
+          <p className="text-muted mb-4">
             Review the drafts below. Click on any draft to view details and validate or reject it.
           </p>
 
-          <div className={styles.draftsGrid}>
+          <Row xs={1} md={2} lg={3} className="g-4 mb-4">
             {drafts.map((draft) => (
-              <RecipeDraftCard
-                key={draft.id}
-                draft={draft}
-                onView={() => handleViewDraft(draft.id)}
-              />
+              <Col key={draft.id}>
+                <RecipeDraftCard
+                  draft={draft}
+                  onView={() => handleViewDraft(draft.id)}
+                />
+              </Col>
             ))}
-          </div>
+          </Row>
 
-          <div className={styles.viewAllButton}>
+          <div className="text-center">
             <Button
               variant="secondary"
               onClick={handleViewAllDrafts}
@@ -250,6 +254,6 @@ export const RecipeBuilderPage = () => {
           </div>
         </div>
       )}
-    </div>
+    </Container>
   );
 };

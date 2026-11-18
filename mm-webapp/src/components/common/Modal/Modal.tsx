@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useCallback } from 'react';
-import styles from './Modal.module.css';
+import { Modal as BootstrapModal } from 'react-bootstrap';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,6 +8,7 @@ interface ModalProps {
   title?: string;
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
+  size?: 'sm' | 'lg' | 'xl';
 }
 
 export const Modal = ({
@@ -17,51 +18,52 @@ export const Modal = ({
   title,
   closeOnOverlayClick = true,
   closeOnEscape = true,
+  size,
 }: ModalProps) => {
-  const handleEscape = useCallback(
+  // Handle escape key
+  const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && closeOnEscape) {
+      if (event.key === 'Escape' && closeOnEscape && isOpen) {
         onClose();
       }
     },
-    [onClose, closeOnEscape]
+    [onClose, closeOnEscape, isOpen]
   );
 
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, handleEscape]);
-
-  if (!isOpen) {
-    return null;
-  }
-
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget && closeOnOverlayClick) {
-      onClose();
-    }
-  };
+  }, [isOpen, handleKeyDown]);
 
   return (
-    <div className={styles.overlay} onClick={handleOverlayClick}>
-      <div className={styles.modal}>
-        {title && (
-          <div className={styles.header}>
-            <h2 className={styles.title}>{title}</h2>
-            <button className={styles.closeButton} onClick={onClose}>
-              <i className="bi bi-x-lg"></i>
-            </button>
-          </div>
-        )}
-        <div className={styles.content}>{children}</div>
-      </div>
-    </div>
+    <BootstrapModal
+      show={isOpen}
+      onHide={onClose}
+      backdrop={closeOnOverlayClick ? true : 'static'}
+      keyboard={closeOnEscape}
+      size={size}
+      centered
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget && closeOnOverlayClick) {
+          onClose();
+        }
+      }}
+      dialogClassName="modal-dialog-centered"
+      contentClassName="border-0"
+    >
+      {title && (
+        <BootstrapModal.Header closeButton closeVariant="white">
+          <BootstrapModal.Title>{title}</BootstrapModal.Title>
+        </BootstrapModal.Header>
+      )}
+      <BootstrapModal.Body>{children}</BootstrapModal.Body>
+    </BootstrapModal>
   );
 };
