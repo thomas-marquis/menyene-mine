@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/common/Button/Button';
+import { Modal } from '../../components/common/Modal/Modal';
 import { RecipeContent } from '../../components/recipe/RecipeContent';
 import { recipeDraftService } from '../../services/recipeDraftService';
 import { recipeService } from '../../services/recipeService';
 import type { RecipeDraft } from '../../types/recipe_draft.types';
-import styles from './DraftDetail.module.css';
+import { Container, Row, Col, Alert, Spinner, Card, Badge } from 'react-bootstrap';
 
 export const DraftDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -147,14 +148,27 @@ export const DraftDetailPage = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  // Map status to Bootstrap badge variant
+  const getStatusVariant = (status: string): string => {
     switch (status) {
       case 'validated':
-        return <span className="badge bg-success">Validated</span>;
+        return 'success';
       case 'rejected':
-        return <span className="badge bg-danger">Rejected</span>;
+        return 'danger';
       default:
-        return <span className="badge bg-warning text-dark">Draft</span>;
+        return 'warning';
+    }
+  };
+
+  // Map status to display text
+  const getStatusText = (status: string): string => {
+    switch (status) {
+      case 'validated':
+        return 'Validated';
+      case 'rejected':
+        return 'Rejected';
+      default:
+        return 'Draft';
     }
   };
 
@@ -183,15 +197,17 @@ export const DraftDetailPage = () => {
     const difficulty = content.difficulty || 'Medium';
 
     return (
-      <div className={styles.content}>
-        <h2 className={styles.contentTitle}>{title}</h2>
-        
-        <div className={styles.summary}>
-          <h3>Summary</h3>
-          <p>{summary}</p>
-        </div>
+      <Card className="mb-4">
+        <Card.Body>
+          <h2 className="mb-3" style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2c3e50' }}>
+            {title}
+          </h2>
+          
+          <div className="mb-4">
+            <h4 className="mb-2">Summary</h4>
+            <p className="text-muted">{summary}</p>
+          </div>
 
-        <div className={styles.recipeDetails}>
           <RecipeContent
             ingredients={ingredients}
             instructions={instructions}
@@ -202,68 +218,69 @@ export const DraftDetailPage = () => {
             showTitle={false}
             showSummary={false}
           />
-        </div>
-      </div>
+        </Card.Body>
+      </Card>
     );
   };
 
   if (loading) {
     return (
-      <div className={styles.loadingContainer}>
-        <div className="spinner-border text-primary" role="status">
+      <Container className="py-5 text-center">
+        <Spinner animation="border" variant="primary" role="status" className="mb-3">
           <span className="visually-hidden">Loading...</span>
-        </div>
+        </Spinner>
         <p>Loading draft...</p>
-      </div>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.errorContainer}>
-        <div className="alert alert-danger" role="alert">
+      <Container className="py-5 text-center">
+        <Alert variant="danger" className="mb-4">
           <strong>Error:</strong> {error}
-        </div>
-        <div className={styles.errorActions}>
+        </Alert>
+        <div className="d-flex justify-content-center gap-2">
           <Button onClick={() => fetchDraft()} variant="primary" disabled={loading}>
             {loading ? 'Loading...' : 'Retry'}
           </Button>
-          <Button onClick={handleGoBack} variant="secondary" disabled={loading} className="ms-2">
+          <Button onClick={handleGoBack} variant="secondary" disabled={loading}>
             Back to Drafts
           </Button>
         </div>
-      </div>
+      </Container>
     );
   }
 
   if (!draft) {
     return (
-      <div className={styles.errorContainer}>
-        <div className="alert alert-warning" role="alert">
+      <Container className="py-5 text-center">
+        <Alert variant="warning" className="mb-4">
           Recipe draft not found
-        </div>
+        </Alert>
         <Button onClick={handleGoBack} variant="secondary">
           Back to Drafts
         </Button>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className={styles.detailContainer}>
-      <div className={styles.header}>
-        <Button onClick={handleGoBack} variant="outline" size="medium" disabled={loading}>
+    <Container className="py-4">
+      {/* Header with actions */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <Button onClick={handleGoBack} variant="outline" size="md" disabled={loading}>
           <i className="bi bi-arrow-left me-2"></i>
           Back to Drafts
         </Button>
         
-        <div className={styles.actionButtons}>
+        <div className="d-flex flex-wrap gap-2">
           {draft.status === 'draft' && (
             <>
               <Button
                 onClick={() => setShowConfirmReject(true)}
                 variant="danger"
-                size="medium"
+                size="md"
                 disabled={isValidating || isRejecting}
               >
                 <i className="bi bi-x-circle me-2"></i>
@@ -272,8 +289,7 @@ export const DraftDetailPage = () => {
               <Button
                 onClick={() => setShowConfirmValidate(true)}
                 variant="primary"
-                size="medium"
-                className="ms-2"
+                size="md"
                 disabled={isValidating || isRejecting}
               >
                 <i className="bi bi-check-circle me-2"></i>
@@ -286,7 +302,7 @@ export const DraftDetailPage = () => {
             <Button
               onClick={handleViewRecipe}
               variant="primary"
-              size="medium"
+              size="md"
             >
               <i className="bi bi-eye me-2"></i>
               View Recipe
@@ -296,8 +312,7 @@ export const DraftDetailPage = () => {
           <Button
             onClick={handleDelete}
             variant="outline"
-            size="medium"
-            className="ms-2"
+            size="md"
             disabled={isValidating || isRejecting}
           >
             <i className="bi bi-trash me-2"></i>
@@ -307,129 +322,128 @@ export const DraftDetailPage = () => {
       </div>
 
       {successMessage && (
-        <div className="alert alert-success" role="alert">
+        <Alert variant="success" className="mb-4">
           {successMessage}
-        </div>
+        </Alert>
       )}
 
-      <div className={styles.meta}>
-        <h1 className={styles.title}>
+      {/* Draft Meta */}
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <h1 className="mb-0" style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50' }}>
           Draft #{draft.id}
         </h1>
-        <div className={styles.status}>
-          {getStatusBadge(draft.status)}
-        </div>
+        <Badge bg={getStatusVariant(draft.status)} className="p-2">
+          {getStatusText(draft.status)}
+        </Badge>
       </div>
 
-      <div className={styles.info}>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Created:</span>
-          <span className={styles.infoValue}>{formatDate(draft.created_at)}</span>
-        </div>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Updated:</span>
-          <span className={styles.infoValue}>{formatDate(draft.updated_at)}</span>
-        </div>
-        {draft.recipe_id && (
-          <div className={styles.infoItem}>
-            <span className={styles.infoLabel}>Recipe ID:</span>
-            <span className={styles.infoValue}>{draft.recipe_id}</span>
-          </div>
-        )}
-      </div>
+      {/* Draft Info */}
+      <Card className="mb-4">
+        <Card.Body>
+          <Row className="g-3">
+            <Col md={6}>
+              <div className="d-flex gap-2">
+                <span className="text-muted small">Created:</span>
+                <span>{formatDate(draft.created_at)}</span>
+              </div>
+            </Col>
+            <Col md={6}>
+              <div className="d-flex gap-2">
+                <span className="text-muted small">Updated:</span>
+                <span>{formatDate(draft.updated_at)}</span>
+              </div>
+            </Col>
+            {draft.recipe_id && (
+              <Col md={12}>
+                <div className="d-flex gap-2">
+                  <span className="text-muted small">Recipe ID:</span>
+                  <Badge bg="light" text="primary" className="p-1">{draft.recipe_id}</Badge>
+                </div>
+              </Col>
+            )}
+          </Row>
+        </Card.Body>
+      </Card>
 
-      <div className={styles.promptSection}>
-        <h3>User Prompt</h3>
-        <div className={styles.promptContent}>
-          <p>{draft.user_instruction}</p>
-        </div>
-      </div>
+      {/* User Prompt */}
+      <Card className="mb-4">
+        <Card.Header className="bg-white border-0">
+          <h3 className="mb-0" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#2c3e50' }}>
+            User Prompt
+          </h3>
+        </Card.Header>
+        <Card.Body>
+          <p className="mb-0">{draft.user_instruction}</p>
+        </Card.Body>
+      </Card>
 
       {renderRecipeContent()}
 
       {/* Confirmation Modals */}
       {showConfirmValidate && (
-        <div className="modal show" style={{ display: 'block' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirm Validation</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowConfirmValidate(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>Are you sure you want to validate this draft and create a recipe from it?</p>
-                <p className="text-muted">
-                  This will create a new recipe in your catalog with the title: 
-                  <strong>{draft.generated_content.title || 'Untitled Recipe'}</strong>
-                </p>
-              </div>
-              <div className="modal-footer">
-                <Button
-                  onClick={() => setShowConfirmValidate(false)}
-                  variant="secondary"
-                  disabled={isValidating}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleValidate}
-                  variant="primary"
-                  className="ms-2"
-                  loading={isValidating}
-                  disabled={isValidating}
-                >
-                  {isValidating ? 'Validating...' : 'Validate & Create Recipe'}
-                </Button>
-              </div>
-            </div>
+        <Modal
+          isOpen={showConfirmValidate}
+          onClose={() => setShowConfirmValidate(false)}
+          title="Confirm Validation"
+          closeOnOverlayClick={!isValidating}
+          closeOnEscape={!isValidating}
+        >
+          <p>Are you sure you want to validate this draft and create a recipe from it?</p>
+          <p className="text-muted">
+            This will create a new recipe in your catalog with the title: 
+            <strong>{draft.generated_content.title || 'Untitled Recipe'}</strong>
+          </p>
+          <div className="d-flex justify-content-end gap-2 mt-4">
+            <Button
+              onClick={() => setShowConfirmValidate(false)}
+              variant="secondary"
+              disabled={isValidating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleValidate}
+              variant="primary"
+              loading={isValidating}
+              disabled={isValidating}
+            >
+              {isValidating ? 'Validating...' : 'Validate & Create Recipe'}
+            </Button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {showConfirmReject && (
-        <div className="modal show" style={{ display: 'block' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirm Rejection</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowConfirmReject(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>Are you sure you want to reject this draft?</p>
-                <p className="text-muted">
-                  You can still view it later in the "Rejected" tab, but it won't be created as a recipe.
-                </p>
-              </div>
-              <div className="modal-footer">
-                <Button
-                  onClick={() => setShowConfirmReject(false)}
-                  variant="secondary"
-                  disabled={isRejecting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleReject}
-                  variant="danger"
-                  className="ms-2"
-                  loading={isRejecting}
-                  disabled={isRejecting}
-                >
-                  {isRejecting ? 'Rejecting...' : 'Reject Draft'}
-                </Button>
-              </div>
-            </div>
+        <Modal
+          isOpen={showConfirmReject}
+          onClose={() => setShowConfirmReject(false)}
+          title="Confirm Rejection"
+          closeOnOverlayClick={!isRejecting}
+          closeOnEscape={!isRejecting}
+        >
+          <p>Are you sure you want to reject this draft?</p>
+          <p className="text-muted">
+            You can still view it later in the "Rejected" tab, but it won't be created as a recipe.
+          </p>
+          <div className="d-flex justify-content-end gap-2 mt-4">
+            <Button
+              onClick={() => setShowConfirmReject(false)}
+              variant="secondary"
+              disabled={isRejecting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReject}
+              variant="danger"
+              loading={isRejecting}
+              disabled={isRejecting}
+            >
+              {isRejecting ? 'Rejecting...' : 'Reject Draft'}
+            </Button>
           </div>
-        </div>
+        </Modal>
       )}
-    </div>
+    </Container>
   );
 };

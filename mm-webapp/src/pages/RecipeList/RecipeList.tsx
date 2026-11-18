@@ -5,7 +5,7 @@ import { RecipeCard } from '../../components/recipe/RecipeCard/RecipeCard';
 import { RecipeFormModal } from '../../components/recipe/RecipeFormModal/RecipeFormModal';
 import { recipeService } from '../../services/recipeService';
 import type { Recipe } from '../../types/recipe.types';
-import styles from './RecipeList.module.css';
+import { Container, Row, Col, Form, InputGroup, Alert, Pagination, Spinner } from 'react-bootstrap';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -158,39 +158,29 @@ export const RecipeListPage = () => {
     safeCurrentPage * ITEMS_PER_PAGE
   );
 
-  // Render pagination buttons with ellipsis for many pages
-  const renderPaginationButtons = () => {
-    const buttons = [];
+  // Render pagination items
+  const renderPaginationItems = () => {
+    const items = [];
     const maxVisiblePages = 5; // Maximum number of page buttons to show
     
     // Always show first page
     if (totalPages > 1) {
-      buttons.push(
-        <li
+      items.push(
+        <Pagination.Item
           key={1}
-          className={`page-item ${safeCurrentPage === 1 ? 'active' : ''}`}
+          active={safeCurrentPage === 1}
+          onClick={() => !loading && setCurrentPage(1)}
+          disabled={loading}
         >
-          <button
-            className="page-link"
-            onClick={() => {
-              if (!loading) {
-                setCurrentPage(1);
-              }
-            }}
-            disabled={loading}
-          >
-            1
-          </button>
-        </li>
+          1
+        </Pagination.Item>
       );
     }
 
     // Show ellipsis if needed before current page
     if (safeCurrentPage > 3) {
-      buttons.push(
-        <li key="ellipsis-start" className="page-item disabled">
-          <span className="page-link">...</span>
-        </li>
+      items.push(
+        <Pagination.Ellipsis key="ellipsis-start" disabled />
       );
     }
 
@@ -199,77 +189,59 @@ export const RecipeListPage = () => {
     const endPage = Math.min(totalPages - 1, safeCurrentPage + Math.floor(maxVisiblePages / 2));
 
     for (let page = startPage; page <= endPage; page++) {
-      buttons.push(
-        <li
+      items.push(
+        <Pagination.Item
           key={page}
-          className={`page-item ${safeCurrentPage === page ? 'active' : ''}`}
+          active={safeCurrentPage === page}
+          onClick={() => !loading && setCurrentPage(page)}
+          disabled={loading}
         >
-          <button
-            className="page-link"
-            onClick={() => {
-              if (!loading) {
-                setCurrentPage(page);
-              }
-            }}
-            disabled={loading}
-          >
-            {page}
-          </button>
-        </li>
+          {page}
+        </Pagination.Item>
       );
     }
 
     // Show ellipsis if needed after current page
     if (safeCurrentPage < totalPages - 2) {
-      buttons.push(
-        <li key="ellipsis-end" className="page-item disabled">
-          <span className="page-link">...</span>
-        </li>
+      items.push(
+        <Pagination.Ellipsis key="ellipsis-end" disabled />
       );
     }
 
     // Always show last page if different from first
     if (totalPages > 1) {
-      buttons.push(
-        <li
+      items.push(
+        <Pagination.Item
           key={totalPages}
-          className={`page-item ${safeCurrentPage === totalPages ? 'active' : ''}`}
+          active={safeCurrentPage === totalPages}
+          onClick={() => !loading && setCurrentPage(totalPages)}
+          disabled={loading}
         >
-          <button
-            className="page-link"
-            onClick={() => {
-              if (!loading) {
-                setCurrentPage(totalPages);
-              }
-            }}
-            disabled={loading}
-          >
-            {totalPages}
-          </button>
-        </li>
+          {totalPages}
+        </Pagination.Item>
       );
     }
 
-    return buttons;
+    return items;
   };
 
   if (loading && allRecipes.length === 0 && searchResults.length === 0) {
     return (
-      <div className={styles.loadingContainer}>
-        <div className="spinner-border text-primary" role="status">
+      <Container className="py-5 text-center">
+        <Spinner animation="border" variant="primary" role="status" className="mb-3">
           <span className="visually-hidden">Loading...</span>
-        </div>
+        </Spinner>
         <p>Loading recipes...</p>
-      </div>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.errorContainer}>
-        <div className="alert alert-danger" role="alert">
+      <Container className="py-5 text-center">
+        <Alert variant="danger" className="mb-4">
           <strong>Error:</strong> {error}
-        </div>
+        </Alert>
         <Button
           onClick={() => {
             setError(null);
@@ -280,33 +252,38 @@ export const RecipeListPage = () => {
         >
           {loading ? 'Loading...' : 'Retry'}
         </Button>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className={styles.recipeListContainer}>
+    <Container className="py-4">
       {successMessage && (
-        <div className="alert alert-success" role="alert">
+        <Alert variant="success" className="mb-4">
           {successMessage}
-        </div>
+        </Alert>
       )}
-      <div className={styles.header}>
-        <h1 className={styles.title}>My Recipes</h1>
-        <div className={styles.headerButtons}>
+      
+      {/* Header */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+          <h1 className="mb-0" style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50' }}>
+            My Recipes
+          </h1>
+        </div>
+        <div className="d-flex gap-2">
           <Button
             onClick={handleCreateWithAI}
             variant="outline"
-            size="medium"
+            size="md"
             disabled={loading}
-            className="me-2"
           >
             <i className="bi bi-robot me-1"></i> AI Create
           </Button>
           <Button
             onClick={handleCreateRecipe}
             variant="primary"
-            size="medium"
+            size="md"
             disabled={loading}
           >
             <i className="bi bi-plus-lg me-2"></i>
@@ -315,95 +292,87 @@ export const RecipeListPage = () => {
         </div>
       </div>
 
-      <div className={styles.searchContainer}>
-        <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
-          <div className="input-group">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search recipes by title, summary, ingredients..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              disabled={loading}
-            />
-            <button
-              className="btn btn-primary"
-              type="submit"
-              disabled={loading || !searchQuery.trim()}
-            >
-              <i className="bi bi-search"></i>
-            </button>
-          </div>
-        </form>
-      </div>
+      {/* Search */}
+      <Form onSubmit={handleSearchSubmit} className="mb-4">
+        <InputGroup>
+          <Form.Control
+            type="text"
+            placeholder="Search recipes by title, summary, ingredients..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            disabled={loading}
+          />
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={loading || !searchQuery.trim()}
+          >
+            <i className="bi bi-search"></i>
+          </Button>
+        </InputGroup>
+      </Form>
 
-      {(isSearching || loading) && displayRecipes.length === 0 && searchQuery.trim() ? (
-        <div className={styles.loadingContainer}>
-          <div className="spinner-border text-primary" role="status">
+      {((isSearching || loading) && displayRecipes.length === 0 && searchQuery.trim()) ? (
+        <Container className="py-5 text-center">
+          <Spinner animation="border" variant="primary" role="status" className="mb-3">
             <span className="visually-hidden">Searching...</span>
-          </div>
+          </Spinner>
           <p>Searching recipes...</p>
-        </div>
+        </Container>
       ) : paginatedRecipes.length > 0 ? (
         <>
-          <div className={styles.recipesGrid}>
+          {/* Recipes Grid */}
+          <Row xs={1} md={2} lg={3} xxl={4} className="g-4 mb-4">
             {paginatedRecipes
               .filter((recipe) => recipe && recipe.id)
               .map((recipe) => (
-                <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  onView={() => handleViewRecipe(recipe.id!)}
-                />
+                <Col key={recipe.id}>
+                  <RecipeCard
+                    recipe={recipe}
+                    onView={() => handleViewRecipe(recipe.id!)}
+                  />
+                </Col>
               ))}
-          </div>
+          </Row>
 
+          {/* Pagination */}
           {totalPages > 1 && (
-            <nav className={styles.pagination}>
-              <ul className="pagination justify-content-center">
-                <li className={`page-item ${safeCurrentPage === 1 ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => {
-                      if (!loading) {
-                        setCurrentPage((p) => Math.max(1, p - 1));
-                      }
-                    }}
-                    disabled={safeCurrentPage === 1 || loading}
-                    aria-label="Previous"
-                  >
-                    <i className="bi bi-chevron-left"></i>
-                  </button>
-                </li>
-                {renderPaginationButtons()}
-                <li className={`page-item ${safeCurrentPage === totalPages ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => {
-                      if (!loading) {
-                        setCurrentPage((p) => Math.min(totalPages, p + 1));
-                      }
-                    }}
-                    disabled={safeCurrentPage === totalPages || loading}
-                    aria-label="Next"
-                  >
-                    <i className="bi bi-chevron-right"></i>
-                  </button>
-                </li>
-              </ul>
-            </nav>
+            <div className="d-flex justify-content-center">
+              <Pagination>
+                <Pagination.First
+                  onClick={() => !loading && setCurrentPage(1)}
+                  disabled={safeCurrentPage === 1 || loading}
+                  aria-label="First"
+                />
+                <Pagination.Prev
+                  onClick={() => !loading && setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage === 1 || loading}
+                  aria-label="Previous"
+                />
+                {renderPaginationItems()}
+                <Pagination.Next
+                  onClick={() => !loading && setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage === totalPages || loading}
+                  aria-label="Next"
+                />
+                <Pagination.Last
+                  onClick={() => !loading && setCurrentPage(totalPages)}
+                  disabled={safeCurrentPage === totalPages || loading}
+                  aria-label="Last"
+                />
+              </Pagination>
+            </div>
           )}
         </>
       ) : (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>
+        /* Empty State */
+        <Container className="py-5 text-center">
+          <div className="mb-4">
             <i className="bi bi-book text-muted" style={{ fontSize: '4rem' }}></i>
           </div>
-          <h3>{searchQuery.trim() ? 'No recipes found' : 'No recipes yet'}</h3>
-          <p>
-            {searchQuery.trim()
-              ? 'Try a different search term.'
-              : 'Start by creating your first recipe!'}
+          <h3 className="mb-2">{searchQuery.trim() ? 'No recipes found' : 'No recipes yet'}</h3>
+          <p className="text-muted mb-4">
+            {searchQuery.trim() ? 'Try a different search term.' : 'Start by creating your first recipe!'}
           </p>
           {searchQuery.trim() && paginatedRecipes.length === 0 && (
             <Button
@@ -427,9 +396,10 @@ export const RecipeListPage = () => {
           <Button onClick={handleCreateRecipe} variant="primary">
             {searchQuery.trim() ? 'Create' : 'Create Your First Recipe'}
           </Button>
-        </div>
+        </Container>
       )}
 
+      {/* Create Modal */}
       {showCreateModal && (
         <RecipeFormModal
           isOpen={showCreateModal}
@@ -437,6 +407,6 @@ export const RecipeListPage = () => {
           onSuccess={handleRecipeCreated}
         />
       )}
-    </div>
+    </Container>
   );
 };

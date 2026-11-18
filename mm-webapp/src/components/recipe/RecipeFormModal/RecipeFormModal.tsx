@@ -3,7 +3,7 @@ import { Button } from '../../common/Button/Button';
 import { Modal } from '../../common/Modal/Modal';
 import { recipeService } from '../../../services/recipeService';
 import type { Recipe, RecipeCreate, RecipeUpdate } from '../../../types/recipe.types';
-import styles from './RecipeFormModal.module.css';
+import { Form, InputGroup, Row, Col, Alert, Badge } from 'react-bootstrap';
 
 interface RecipeFormModalProps {
   isOpen: boolean;
@@ -38,95 +38,89 @@ export const RecipeFormModal = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Drag and drop state for instructions (mouse-based approach)
+  // Drag and drop state for instructions
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState<[number, number]>([0, 0]);
-  const [dropZoneIndex, setDropZoneIndex] = useState<number>(0);
-  
+  const instructionItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
   // Track mouse position
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       setMousePosition([e.clientX, e.clientY]);
+      
+      // If dragging, find where to insert
+      if (draggedIndex !== null && instructionItemRefs.current.length > 0) {
+        let newDragOverIndex: number | null = null;
+        let minDistance = Infinity;
+        
+        instructionItemRefs.current.forEach((ref: HTMLDivElement | null, index: number) => {
+          if (ref && index !== draggedIndex) {  // Skip the dragged item
+            const rect = ref.getBoundingClientRect();
+            const top = rect.top;
+            const bottom = rect.bottom;
+            
+            // Check if mouse is within this item's bounds
+            if (e.clientY >= top && e.clientY <= bottom) {
+              const distance = Math.min(Math.abs(e.clientY - top), Math.abs(e.clientY - bottom));
+              if (distance < minDistance) {
+                minDistance = distance;
+                // If mouse is in the top half, insert before; otherwise after
+                newDragOverIndex = e.clientY < (top + rect.height / 2) ? index : index + 1;
+              }
+            }
+          }
+        });
+        
+        setDragOverIndex(newDragOverIndex);
+      }
     };
     document.addEventListener('mousemove', handler);
     return () => document.removeEventListener('mousemove', handler);
-  }, []);
+  }, [draggedIndex]);
 
-  // Find closest drop zone
-  // We use data attributes instead of class names because CSS Modules hash class names
-  useEffect(() => {
-    if (draggedIndex !== null) {
-      const elements = Array.from(document.querySelectorAll('[data-drop-zone-index]'));
-      if (elements.length > 0) {
-        // Get vertical positions of all drop zones
-        const positions = elements.map((e: HTMLElement) => e.getBoundingClientRect().top);
-        // Find which drop zone is closest to the mouse
-        const absDifferences = positions.map((v: number) => Math.abs(v - mousePosition[1]));
-        let closestDropZoneDomIndex = absDifferences.indexOf(Math.min(...absDifferences));
-        
-        // Get the actual drop zone index from the data attribute
-        // This maps directly to the insertion position in the instructions array
-        const closestElement = elements[closestDropZoneDomIndex] as HTMLElement;
-        const closestDropZoneIndex = parseInt(closestElement.dataset.dropZoneIndex || '0');
-        
-        // Ensure the index is within bounds (0 to instructions.length)
-        const boundedIndex = Math.max(0, Math.min(closestDropZoneIndex, formData.instructions.length));
-        
-        setDropZoneIndex(boundedIndex);
-      }
-    }
-  }, [draggedIndex, mousePosition, formData.instructions.length]);
+  // Handle mouse down on drag handle
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    setDraggedIndex(index);
+    document.body.style.cursor = 'grabbing';
+  };
 
-  // Drop item on mouse up
+  // Handle mouse up (drop)
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (draggedIndex !== null) {
-        e.preventDefault();
-        setDraggedIndex(null);
+    const handleMouseUp = () => {
+      if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+        // Calculate the actual insertion index
+        // If dragging down (draggedIndex < dragOverIndex), insert before dragOverIndex
+        // If dragging up (draggedIndex > dragOverIndex), insert after dragOverIndex
+        let insertAt = dragOverIndex;
+        if (draggedIndex > dragOverIndex) {
+          // Dragging up: if mouse is below midpoint, insert after; otherwise before
+          // But since we're using closest midpoint, we need to check the position
+          // Actually, since all items are still in the DOM, we just use dragOverIndex directly
+          insertAt = dragOverIndex;
+        }
         
-        // Reorder the list
         setFormData((prev) => {
           const newInstructions = [...prev.instructions];
-          let fromIndex = draggedIndex;
-          let toIndex = dropZoneIndex;
-          
-          // Ensure indices are within bounds
-          fromIndex = Math.max(0, Math.min(fromIndex, newInstructions.length - 1));
-          toIndex = Math.max(0, Math.min(toIndex, newInstructions.length));
-          
-          if (fromIndex === toIndex) return prev;
-          
-          const reordered = reorderList(newInstructions, fromIndex, toIndex);
-          return { ...prev, instructions: reordered };
+          const [removed] = newInstructions.splice(draggedIndex, 1);
+          newInstructions.splice(insertAt, 0, removed);
+          return { ...prev, instructions: newInstructions };
         });
       }
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      document.body.style.cursor = '';
     };
-    document.addEventListener('mouseup', handler);
-    return () => document.removeEventListener('mouseup', handler);
-  }, [draggedIndex, dropZoneIndex]);
-
-  // Helper function to reorder list
-  const reorderList = useCallback((list: string[], start: number, end: number): string[] => {
-    if (start === end) return list;
     
-    const newList = [...list];
-    if (start < end) {
-      // Moving forward
-      const temp = newList[start];
-      for (let i = start; i < end; i++) {
-        newList[i] = newList[i + 1];
-      }
-      newList[end - 1] = temp;
-    } else {
-      // Moving backward
-      const temp = newList[start];
-      for (let i = start; i > end; i--) {
-        newList[i] = newList[i - 1];
-      }
-      newList[end] = temp;
-    }
-    return newList;
-  }, []);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => document.removeEventListener('mouseup', handleMouseUp);
+  }, [draggedIndex, dragOverIndex]);
+
+  // Initialize refs
+  useEffect(() => {
+    instructionItemRefs.current = instructionItemRefs.current.slice(0, formData.instructions.length);
+  }, [formData.instructions.length]);
 
   // Initialize form with recipe data if editing
   useEffect(() => {
@@ -261,12 +255,6 @@ export const RecipeFormModal = ({
     }
   }, [formData.instructions.length]);
 
-  // Mouse-based drag start handler
-  const handleMouseDown = useCallback((index: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    setDraggedIndex(index);
-  }, []);
-
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError(null);
@@ -379,207 +367,271 @@ export const RecipeFormModal = ({
       title={isEditMode ? 'Edit Recipe' : 'Create New Recipe'}
       closeOnOverlayClick={!loading}
       closeOnEscape={!loading}
+      size="lg"
     >
-      <div className={styles.modalContent}>
+      <div className="p-1">
         {error && (
-          <div className="alert alert-danger" role="alert">
+          <Alert variant="danger" className="mb-3">
             <strong>Error:</strong> {error}
-          </div>
+          </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="title" className={styles.label}>
-                Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleTextChange}
-                className="form-control"
-                placeholder="Enter recipe title"
-                maxLength={255}
-                disabled={loading}
-              />
-              <div className={styles.charCount}>
-                {formData.title.length}/255 characters
-              </div>
-            </div>
+        <Form onSubmit={handleSubmit}>
+          {/* Title */}
+          <Form.Group className="mb-3">
+            <Form.Label htmlFor="title" className="fw-medium">
+              Title *
+            </Form.Label>
+            <Form.Control
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleTextChange}
+              placeholder="Enter recipe title"
+              maxLength={255}
+              disabled={loading}
+              isInvalid={formData.title.length > 255}
+            />
+            <Form.Text className="text-muted">
+              {formData.title.length}/255 characters
+            </Form.Text>
+          </Form.Group>
 
-            <div className={styles.formGroup}>
-              <label htmlFor="summary" className={styles.label}>
-                Summary * (max 500 characters)
-              </label>
-              <textarea
-                id="summary"
-                name="summary"
-                value={formData.summary}
-                onChange={handleTextChange}
-                className="form-control"
-                placeholder="Enter a brief summary of the recipe"
-                rows={3}
-                maxLength={500}
-                disabled={loading}
-              />
-              <div className={styles.charCount}>
-                {formData.summary.length}/500 characters
-              </div>
-            </div>
+          {/* Summary */}
+          <Form.Group className="mb-3">
+            <Form.Label htmlFor="summary" className="fw-medium">
+              Summary * (max 500 characters)
+            </Form.Label>
+            <Form.Control
+              as="textarea"
+              id="summary"
+              name="summary"
+              value={formData.summary}
+              onChange={handleTextChange}
+              placeholder="Enter a brief summary of the recipe"
+              rows={3}
+              maxLength={500}
+              disabled={loading}
+              isInvalid={formData.summary.length > 500}
+            />
+            <Form.Text className="text-muted">
+              {formData.summary.length}/500 characters
+            </Form.Text>
+          </Form.Group>
 
-            {/* Ingredients Section */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Ingredients *
-              </label>
-              {formData.ingredients.map((ingredient, index) => (
-                <div key={index} className={styles.ingredientRow}>
-                  <div className={styles.ingredientInputContainer}>
-                    <input
-                      type="text"
-                      value={ingredient}
-                      onChange={(e) => handleIngredientInput(index, e.target.value)}
-                      className="form-control"
-                      placeholder={index === 0 ? "Enter an ingredient (e.g., 2 cups flour)" : "Enter another ingredient"}
-                      disabled={loading}
-                    />
-                  </div>
-                  {formData.ingredients.length > 1 && (
-                    <button
-                      type="button"
-                      className={styles.removeButton}
-                      onClick={() => removeIngredient(index)}
-                      disabled={loading}
-                      title="Remove ingredient"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+          {/* Ingredients Section */}
+          <Form.Group className="mb-4">
+            <Form.Label className="fw-medium">
+              Ingredients *
+            </Form.Label>
+            {formData.ingredients.map((ingredient, index) => (
+              <InputGroup key={index} className="mb-2">
+                <Form.Control
+                  type="text"
+                  value={ingredient}
+                  onChange={(e) => handleIngredientInput(index, e.target.value)}
+                  placeholder={index === 0 ? "Enter an ingredient (e.g., 2 cups flour)" : "Enter another ingredient"}
+                  disabled={loading}
+                />
+                {formData.ingredients.length > 1 && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => removeIngredient(index)}
+                    disabled={loading}
+                    title="Remove ingredient"
+                    className="px-2"
+                  >
+                    <i className="bi bi-trash"></i>
+                  </Button>
+                )}
+              </InputGroup>
+            ))}
+          </Form.Group>
 
-            {/* Instructions Section */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Instructions * (Drag to reorder)
-              </label>
-              
-              {/* Floating dragged item */}
-              {draggedIndex !== null && (
-                <div
-                  className={`${styles.instructionRow} ${styles.floating}`}
-                  style={{
-                    left: `${mousePosition[0]}px`,
-                    top: `${mousePosition[1]}px`,
-                    position: 'fixed',
-                    zIndex: 1000,
-                    pointerEvents: 'none',
-                    boxShadow: '5px 5px 10px rgba(0,0,0,0.5)',
-                  }}
-                >
-                  <div className={styles.instructionInputContainer}>
-                    <div className={styles.stepNumber}>{draggedIndex + 1}.</div>
-                    <div className={styles.dragHandle}>
-                      <i className="bi bi-grip-vertical"></i>
-                    </div>
-                    <input
-                      type="text"
-                      value={formData.instructions[draggedIndex]}
-                      className="form-control"
-                      readOnly
-                      style={{ background: 'white' }}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Drop zone before all items */}
+          {/* Instructions Section */}
+          <Form.Group className="mb-4">
+            <Form.Label className="fw-medium">
+              Instructions * (Drag to reorder)
+            </Form.Label>
+            
+            {/* Floating dragged item */}
+            {draggedIndex !== null && (
               <div
-                className={`${styles.instructionDropZone} ${draggedIndex === null || dropZoneIndex !== 0 ? styles.hidden : ''}`}
-                data-drop-zone-index={0}
-              />
-              
-              {/* Instruction items */}
-              {formData.instructions.map((instruction, originalIndex) => (
-                <div key={originalIndex}>
-                  {draggedIndex !== originalIndex && (
-                    <>
-                      <div
-                        className={styles.instructionRow}
-                        >
-                        <div className={styles.instructionInputContainer}>
-                          <div className={styles.stepNumber}>{originalIndex + 1}.</div>
-                          <div className={styles.dragHandle} 
-                              onMouseDown={(e) => handleMouseDown(originalIndex, e)}
-                              title="Drag to reorder">
-                            <i className="bi bi-grip-vertical"></i>
-                          </div>
-                          <input
-                            type="text"
-                            value={instruction}
-                            onChange={(e) => handleInstructionInput(originalIndex, e.target.value)}
-                            className="form-control"
-                            placeholder={originalIndex === 0 ? "Enter first step" : "Enter next step"}
-                            disabled={loading}
-                          />
-                        </div>
-                        {formData.instructions.length > 1 && (
-                          <button
-                            type="button"
-                            className={styles.removeButton}
-                            onClick={() => removeInstruction(originalIndex)}
-                            disabled={loading}
-                            title="Remove step"
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
-                        )}
-                      </div>
-                      {/* Drop zone after each item - use originalIndex + 1 */}
-                      <div
-                        className={`${styles.instructionDropZone} ${draggedIndex === null || dropZoneIndex !== originalIndex + 1 ? styles.hidden : ''}`}
-                        data-drop-zone-index={originalIndex + 1}
-                      />
-                    </>
-                  )}
+                className="mb-2 p-2 bg-light rounded position-fixed"
+                style={{
+                  left: `${mousePosition[0] - 100}px`,
+                  top: `${mousePosition[1] - 20}px`,
+                  zIndex: 1000,
+                  pointerEvents: 'none',
+                  boxShadow: '5px 5px 10px rgba(0,0,0,0.5)',
+                  width: 'auto',
+                  minWidth: '300px',
+                }}
+              >
+                <div className="d-flex align-items-center gap-2">
+                  <Badge bg="secondary">{draggedIndex + 1}.</Badge>
+                  <div className="flex-grow-1">
+                    <i className="bi bi-grip-vertical me-2"></i>
+                    {formData.instructions[draggedIndex]}
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Metadata Section */}
-            <div className={styles.metadataSection}>
-              <h4 className={styles.metadataTitle}>Recipe Details</h4>
+              </div>
+            )}
+            
+            {/* Instruction items with drag-and-drop */}
+            {formData.instructions.map((instruction, index) => {
+              const isDragged = draggedIndex === index;
+              const isDragOver = dragOverIndex === index;
               
-              <div className={styles.metadataGrid}>
-                <div className={styles.formGroup}>
-                  <label htmlFor="servings" className={styles.label}>
+              return (
+                <div
+                  key={index}
+                  className="mb-2"
+                >
+                  {/* Insertion indicator line - shown between items when dragging over */}
+                  {isDragOver && !isDragged && (
+                    <div 
+                      className="w-100"
+                      style={{
+                        height: '5px',
+                        backgroundColor: '#0d6efd',
+                        marginBottom: '5px',
+                        marginTop: '5px'
+                      }}
+                    />
+                  )}
+                  
+                  <div
+                    ref={(el: HTMLDivElement | null) => { instructionItemRefs.current[index] = el; }}
+                    className="instruction-item d-flex align-items-center gap-2 p-2 bg-white border rounded"
+                    style={{
+                      cursor: 'grab',
+                      opacity: isDragged ? 0.3 : 1
+                    }}
+                    >
+                    <Badge bg="secondary" className="p-2">{index + 1}.</Badge>
+                    <div
+                      onMouseDown={(e) => handleMouseDown(index, e)}
+                      className="d-flex align-items-center p-1"
+                      style={{ cursor: 'grab' }}
+                    >
+                      <i className="bi bi-grip-vertical text-muted"></i>
+                    </div>
+                    <Form.Control
+                      type="text"
+                      value={instruction}
+                      onChange={(e) => handleInstructionInput(index, e.target.value)}
+                      placeholder={index === 0 ? "Enter first step" : "Enter next step"}
+                      disabled={loading || isDragged}
+                      className="flex-grow-1 border-0 bg-transparent"
+                      readOnly={false}
+                    />
+                    {formData.instructions.length > 1 && !isDragged && (
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeInstruction(index);
+                        }}
+                        disabled={loading}
+                        title="Remove step"
+                        className="px-2 py-1"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Floating dragged item */}
+            {draggedIndex !== null && (
+              <div
+                className="position-fixed"
+                style={{
+                  left: mousePosition[0] - 150,
+                  top: mousePosition[1] - 25,
+                  zIndex: 1000,
+                  pointerEvents: 'none',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                  width: '300px'
+                }}
+              >
+                <div className="d-flex align-items-center gap-2 p-2 bg-white border rounded">
+                  <Badge bg="secondary" className="p-2">{draggedIndex + 1}.</Badge>
+                  <div className="d-flex align-items-center p-1">
+                    <i className="bi bi-grip-vertical text-muted"></i>
+                  </div>
+                  <span className="flex-grow-1 text-truncate">
+                    {formData.instructions[draggedIndex]}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {/* Floating dragged item */}
+            {draggedIndex !== null && (
+              <div
+                className="position-fixed"
+                style={{
+                  left: mousePosition[0] - 150,
+                  top: mousePosition[1] - 25,
+                  zIndex: 1000,
+                  pointerEvents: 'none',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                  width: '300px'
+                }}
+              >
+                <div className="d-flex align-items-center gap-2 p-2 bg-white border rounded">
+                  <Badge bg="secondary" className="p-2">{draggedIndex + 1}.</Badge>
+                  <div className="d-flex align-items-center p-1">
+                    <i className="bi bi-grip-vertical text-muted"></i>
+                  </div>
+                  <span className="flex-grow-1 text-truncate">
+                    {formData.instructions[draggedIndex]}
+                  </span>
+                </div>
+              </div>
+            )}
+          </Form.Group>
+
+          {/* Metadata Section */}
+          <div className="mb-4">
+            <h4 className="mb-3 fw-semibold">Recipe Details</h4>
+            
+            <Row className="g-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label htmlFor="servings" className="fw-medium">
                     Servings
-                  </label>
-                  <input
+                  </Form.Label>
+                  <Form.Control
                     type="number"
                     id="servings"
                     name="servings"
                     value={formData.servings}
                     onChange={handleTextChange}
-                    className="form-control"
                     min={1}
                     max={100}
                     disabled={loading}
                   />
-                </div>
+                </Form.Group>
+              </Col>
 
-                <div className={styles.formGroup}>
-                  <label htmlFor="difficulty" className={styles.label}>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label htmlFor="difficulty" className="fw-medium">
                     Difficulty
-                  </label>
-                  <select
+                  </Form.Label>
+                  <Form.Select
                     id="difficulty"
                     name="difficulty"
                     value={formData.difficulty}
                     onChange={handleTextChange}
-                    className="form-control"
                     disabled={loading}
                   >
                     {DIFFICULTY_OPTIONS.map((option) => (
@@ -587,64 +639,67 @@ export const RecipeFormModal = ({
                         {option}
                       </option>
                     ))}
-                  </select>
-                </div>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
 
-                <div className={styles.formGroup}>
-                  <label htmlFor="prep_time" className={styles.label}>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label htmlFor="prep_time" className="fw-medium">
                     Prep Time
-                  </label>
-                  <input
+                  </Form.Label>
+                  <Form.Control
                     type="text"
                     id="prep_time"
                     name="prep_time"
                     value={formData.prep_time}
                     onChange={handleTextChange}
-                    className="form-control"
                     placeholder="e.g., 20 minutes"
                     disabled={loading}
                   />
-                </div>
+                </Form.Group>
+              </Col>
 
-                <div className={styles.formGroup}>
-                  <label htmlFor="cook_time" className={styles.label}>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label htmlFor="cook_time" className="fw-medium">
                     Cook Time
-                  </label>
-                  <input
+                  </Form.Label>
+                  <Form.Control
                     type="text"
                     id="cook_time"
                     name="cook_time"
                     value={formData.cook_time}
                     onChange={handleTextChange}
-                    className="form-control"
                     placeholder="e.g., 30 minutes"
                     disabled={loading}
                   />
-                </div>
-              </div>
-            </div>
+                </Form.Group>
+              </Col>
+            </Row>
+          </div>
 
-            <div className={styles.formActions}>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleClose}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                loading={loading}
-                disabled={loading}
-                className="ms-2"
-              >
-                {isEditMode ? 'Update Recipe' : 'Create Recipe'}
-              </Button>
-            </div>
-          </form>
-       </div>
+          {/* Form Actions */}
+          <div className="d-flex justify-content-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClose}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+              disabled={loading}
+            >
+              {isEditMode ? 'Update Recipe' : 'Create Recipe'}
+            </Button>
+          </div>
+        </Form>
+      </div>
     </Modal>
   );
 };

@@ -2,7 +2,7 @@ import { RecipeIngredients } from './RecipeIngredients';
 import { RecipeInstructions } from './RecipeInstructions';
 import { RecipeDetails } from './RecipeDetails';
 import { RecipeSummary } from './RecipeSummary';
-import styles from './RecipeContent.module.css';
+import { Row, Col } from 'react-bootstrap';
 
 interface RecipeContentProps {
   title?: string;
@@ -33,21 +33,34 @@ export const RecipeContent = ({
   className = '',
 }: RecipeContentProps) => {
   return (
-    <div className={`${styles.recipeContent} ${className}`}>
-      {showTitle && <h1 className={styles.title}>{title}</h1>}
+    <div className={className}>
+      {showTitle && (
+        <h1 className="mb-4" style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50' }}>
+          {title}
+        </h1>
+      )}
       
       {showSummary && <RecipeSummary summary={summary} />}
 
-      <div className={styles.contentSections}>
-        <RecipeIngredients ingredients={ingredients || []} />
-        <RecipeInstructions instructions={instructions || []} />
-        <RecipeDetails
-          servings={servings}
-          prep_time={prep_time}
-          cook_time={cook_time}
-          difficulty={difficulty}
-        />
-      </div>
+      <Row className="g-4">
+        <Col md={6}>
+          <RecipeIngredients ingredients={ingredients || []} />
+        </Col>
+        <Col md={6}>
+          <RecipeInstructions instructions={instructions || []} />
+        </Col>
+      </Row>
+      
+      <Row className="mt-4">
+        <Col>
+          <RecipeDetails
+            servings={servings}
+            prep_time={prep_time}
+            cook_time={cook_time}
+            difficulty={difficulty}
+          />
+        </Col>
+      </Row>
     </div>
   );
 };

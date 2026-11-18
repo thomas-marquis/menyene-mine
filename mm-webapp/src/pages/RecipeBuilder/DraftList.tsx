@@ -4,7 +4,7 @@ import { Button } from '../../components/common/Button/Button';
 import { RecipeDraftCard } from '../../components/recipe/RecipeDraftCard/RecipeDraftCard';
 import { recipeDraftService } from '../../services/recipeDraftService';
 import type { RecipeDraft, RecipeDraftStats } from '../../types/recipe_draft.types';
-import styles from './DraftList.module.css';
+import { Container, Row, Col, Alert, Spinner, Nav, Badge, Pagination } from 'react-bootstrap';
 
 export const DraftListPage = () => {
   const navigate = useNavigate();
@@ -107,166 +107,217 @@ export const DraftListPage = () => {
     safeCurrentPage * ITEMS_PER_PAGE
   );
 
+  // Render pagination items
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    
+    // Always show first page
+    if (totalPages > 1) {
+      items.push(
+        <Pagination.Item
+          key={1}
+          active={safeCurrentPage === 1}
+          onClick={() => setCurrentPage(1)}
+          disabled={safeCurrentPage === 1}
+        >
+          1
+        </Pagination.Item>
+      );
+    }
 
+    // Show ellipsis if needed before current page
+    if (safeCurrentPage > 3) {
+      items.push(
+        <Pagination.Ellipsis key="ellipsis-start" disabled />
+      );
+    }
+
+    // Show pages around current page
+    const startPage = Math.max(2, safeCurrentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(totalPages - 1, safeCurrentPage + Math.floor(maxVisiblePages / 2));
+
+    for (let page = startPage; page <= endPage; page++) {
+      items.push(
+        <Pagination.Item
+          key={page}
+          active={safeCurrentPage === page}
+          onClick={() => setCurrentPage(page)}
+        >
+          {page}
+        </Pagination.Item>
+      );
+    }
+
+    // Show ellipsis if needed after current page
+    if (safeCurrentPage < totalPages - 2) {
+      items.push(
+        <Pagination.Ellipsis key="ellipsis-end" disabled />
+      );
+    }
+
+    // Always show last page if different from first
+    if (totalPages > 1) {
+      items.push(
+        <Pagination.Item
+          key={totalPages}
+          active={safeCurrentPage === totalPages}
+          onClick={() => setCurrentPage(totalPages)}
+          disabled={safeCurrentPage === totalPages}
+        >
+          {totalPages}
+        </Pagination.Item>
+      );
+    }
+
+    return items;
+  };
 
   if (loading && drafts.length === 0) {
     return (
-      <div className={styles.loadingContainer}>
-        <div className="spinner-border text-primary" role="status">
+      <Container className="py-5 text-center">
+        <Spinner animation="border" variant="primary" role="status" className="mb-3">
           <span className="visually-hidden">Loading...</span>
-        </div>
+        </Spinner>
         <p>Loading drafts...</p>
-      </div>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.errorContainer}>
-        <div className="alert alert-danger" role="alert">
+      <Container className="py-5 text-center">
+        <Alert variant="danger" className="mb-4">
           <strong>Error:</strong> {error}
-        </div>
+        </Alert>
         <Button onClick={() => fetchDrafts()} variant="primary">
           Retry
         </Button>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className={styles.listContainer}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>
-          <i className="bi bi-file-earmark-text me-3"></i>
+    <Container className="py-4">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <h1 className="mb-0 d-flex align-items-center gap-2" style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50' }}>
+          <i className="bi bi-file-earmark-text"></i>
           My Recipe Drafts
         </h1>
-        <Button onClick={handleCreateNew} variant="primary" size="medium">
+        <Button onClick={handleCreateNew} variant="primary" size="md">
           <i className="bi bi-plus-lg me-2"></i>
           Create New Draft
         </Button>
       </div>
 
       {successMessage && (
-        <div className="alert alert-success" role="alert">
+        <Alert variant="success" className="mb-4">
           {successMessage}
-        </div>
+        </Alert>
       )}
 
-      <div className={styles.tabsContainer}>
-        <ul className="nav nav-tabs">
-          <li className="nav-item">
-            <button
-              className={`nav-link ${activeTab === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveTab('all')}
-            >
-              All <span className="badge bg-secondary ms-1">{getTabCount('all')}</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link ${activeTab === 'draft' ? 'active' : ''}`}
-              onClick={() => setActiveTab('draft')}
-            >
-              Pending <span className="badge bg-warning text-dark ms-1">{getTabCount('draft')}</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link ${activeTab === 'validated' ? 'active' : ''}`}
-              onClick={() => setActiveTab('validated')}
-            >
-              Validated <span className="badge bg-success ms-1">{getTabCount('validated')}</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link ${activeTab === 'rejected' ? 'active' : ''}`}
-              onClick={() => setActiveTab('rejected')}
-            >
-              Rejected <span className="badge bg-danger ms-1">{getTabCount('rejected')}</span>
-            </button>
-          </li>
-        </ul>
-      </div>
+      <Nav variant="tabs" className="mb-4">
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'all'}
+            onClick={() => setActiveTab('all')}
+            className="d-flex align-items-center gap-2"
+          >
+            All <Badge bg="secondary" className="ms-1">{getTabCount('all')}</Badge>
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'draft'}
+            onClick={() => setActiveTab('draft')}
+            className="d-flex align-items-center gap-2"
+          >
+            Pending <Badge bg="warning" className="ms-1">{getTabCount('draft')}</Badge>
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'validated'}
+            onClick={() => setActiveTab('validated')}
+            className="d-flex align-items-center gap-2"
+          >
+            Validated <Badge bg="success" className="ms-1">{getTabCount('validated')}</Badge>
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'rejected'}
+            onClick={() => setActiveTab('rejected')}
+            className="d-flex align-items-center gap-2"
+          >
+            Rejected <Badge bg="danger" className="ms-1">{getTabCount('rejected')}</Badge>
+          </Nav.Link>
+        </Nav.Item>
+      </Nav>
 
       {paginatedDrafts.length > 0 ? (
         <>
-          <div className={styles.draftsGrid}>
+          <Row xs={1} md={2} lg={3} className="g-4 mb-4">
             {paginatedDrafts.map((draft) => (
-              <div key={draft.id} className={styles.draftCardWrapper}>
-                <RecipeDraftCard
-                  draft={draft}
-                  onView={() => handleViewDraft(draft.id)}
-                  showStatusBadge
-                />
-                <div className={styles.cardActions}>
+              <Col key={draft.id}>
+                <div className="position-relative h-100">
+                  <RecipeDraftCard
+                    draft={draft}
+                    onView={() => handleViewDraft(draft.id)}
+                    showStatusBadge
+                  />
                   {draft.status === 'draft' && (
-                    <button
-                      className={styles.deleteButton}
-                      onClick={(e) => handleDeleteDraft(draft.id, e)}
-                      title="Delete draft"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+                    <div className="position-absolute top-0 end-0 p-2">
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={(e) => handleDeleteDraft(draft.id, e)}
+                        title="Delete draft"
+                        className="px-2 py-1"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </Button>
+                    </div>
                   )}
                 </div>
-              </div>
+              </Col>
             ))}
-          </div>
+          </Row>
 
           {totalPages > 1 && (
-            <nav className={styles.pagination}>
-              <ul className="pagination justify-content-center">
-                <li className={`page-item ${safeCurrentPage === 1 ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={safeCurrentPage === 1}
-                    aria-label="Previous"
-                  >
-                    <i className="bi bi-chevron-left"></i>
-                  </button>
-                </li>
-                
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const page = Math.max(1, safeCurrentPage - 2) + i;
-                  if (page > totalPages) return null;
-                  
-                  return (
-                    <li
-                      key={page}
-                      className={`page-item ${safeCurrentPage === page ? 'active' : ''}`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </button>
-                    </li>
-                  );
-                })}
-
-                <li className={`page-item ${safeCurrentPage === totalPages ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={safeCurrentPage === totalPages}
-                    aria-label="Next"
-                  >
-                    <i className="bi bi-chevron-right"></i>
-                  </button>
-                </li>
-              </ul>
-            </nav>
+            <div className="d-flex justify-content-center">
+              <Pagination>
+                <Pagination.First
+                  onClick={() => setCurrentPage(1)}
+                  disabled={safeCurrentPage === 1}
+                  aria-label="First"
+                />
+                <Pagination.Prev
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage === 1}
+                  aria-label="Previous"
+                />
+                {renderPaginationItems()}
+                <Pagination.Next
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage === totalPages}
+                  aria-label="Next"
+                />
+                <Pagination.Last
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={safeCurrentPage === totalPages}
+                  aria-label="Last"
+                />
+              </Pagination>
+            </div>
           )}
         </>
       ) : (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>
+        <Container className="py-5 text-center">
+          <div className="mb-4">
             <i className="bi bi-file-earmark-x text-muted" style={{ fontSize: '4rem' }}></i>
           </div>
-          <h3>
+          <h3 className="mb-2">
             {activeTab === 'all' 
               ? 'No drafts yet' 
               : activeTab === 'draft' 
@@ -275,7 +326,7 @@ export const DraftListPage = () => {
                   ? 'No validated drafts' 
                   : 'No rejected drafts'}
           </h3>
-          <p>
+          <p className="text-muted mb-4">
             {activeTab === 'all' 
               ? 'Start by creating a new draft using the AI Recipe Builder.'
               : activeTab === 'draft' 
@@ -288,8 +339,8 @@ export const DraftListPage = () => {
             <i className="bi bi-plus-lg me-2"></i>
             Create New Draft
           </Button>
-        </div>
+        </Container>
       )}
-    </div>
+    </Container>
   );
 };

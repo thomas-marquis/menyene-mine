@@ -1,4 +1,4 @@
-import styles from './RecipeContent.module.css';
+import { Card, ListGroup } from 'react-bootstrap';
 
 interface RecipeIngredientsProps {
   ingredients: string[];
@@ -7,23 +7,41 @@ interface RecipeIngredientsProps {
 export const RecipeIngredients = ({ ingredients }: RecipeIngredientsProps) => {
   if (!ingredients || ingredients.length === 0) {
     return (
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Ingredients</h2>
-        <p className={styles.emptyMessage}>No ingredients specified</p>
-      </section>
+      <Card className="mb-4">
+        <Card.Header className="bg-white border-0">
+          <h3 className="mb-0" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#2c3e50' }}>
+            Ingredients
+          </h3>
+        </Card.Header>
+        <Card.Body>
+          <p className="text-muted mb-0">No ingredients specified</p>
+        </Card.Body>
+      </Card>
     );
   }
 
   return (
-    <section className={styles.section}>
-      <h2 className={styles.sectionTitle}>Ingredients</h2>
-      <ul className={styles.ingredientsList}>
-        {ingredients.map((ingredient, index) => (
-          <li key={index} className={styles.ingredientItem}>
-            {ingredient}
-          </li>
-        ))}
-      </ul>
-    </section>
+    <Card className="mb-4">
+      <Card.Header className="bg-white border-0">
+        <h3 className="mb-0" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#2c3e50' }}>
+          Ingredients
+        </h3>
+      </Card.Header>
+      <Card.Body>
+        <ListGroup variant="flush" className="border-0">
+          {ingredients.map((ingredient, index) => (
+            <ListGroup.Item
+              key={index}
+              className="border-0 px-0 py-2"
+              style={{ backgroundColor: 'transparent' }}
+            >
+              <span className="text-muted" style={{ fontSize: '0.95rem' }}>
+                {ingredient}
+              </span>
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+      </Card.Body>
+    </Card>
   );
 };

@@ -1,5 +1,3 @@
-import styles from './RecipeContent.module.css';
-
 interface RecipeSummaryProps {
   summary: string;
 }
@@ -10,8 +8,10 @@ export const RecipeSummary = ({ summary }: RecipeSummaryProps) => {
   }
 
   return (
-    <div className={styles.summary}>
-      <p>{summary}</p>
+    <div className="mb-4">
+      <p className="lead" style={{ color: '#7f8c8d' }}>
+        {summary}
+      </p>
     </div>
   );
 };
