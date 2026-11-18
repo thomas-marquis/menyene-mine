@@ -497,11 +497,11 @@ export const RecipeDetailPage = () => {
         <div className="d-flex flex-wrap gap-3 mb-4 text-muted small">
           <Badge bg="light" text="secondary" className="p-2">
             <i className="bi bi-calendar me-2"></i>
-            Created: {formatDate(recipe.creation_date)}
+            Created: {formatDate(new Date(recipe.creation_date))}
           </Badge>
           <Badge bg="light" text="secondary" className="p-2">
             <i className="bi bi-clock me-2"></i>
-            Updated: {formatDate(recipe.last_updated)}
+            Updated: {formatDate(new Date(recipe.last_updated))}
           </Badge>
         </div>
 
@@ -637,7 +637,7 @@ export const RecipeDetailPage = () => {
                     {week.days.map(day => (
                       <div
                         key={`${day.year}-${day.month}-${day.day}`}
-                        className={`calendar-day ${day.isCurrentMonth ? 'current-month' : 'other-month'} ${day.isToday ? 'today' : ''} ${planMealDate === formatDateForAPI(day.date) && planMealMoment ? 'selected' : ''}`}
+                        className={`calendar-day ${day.isCurrentMonth ? 'current-month' : 'other-month'} ${day.isToday ? 'today' : ''} ${planMealDate === formatDate(day.date) && planMealMoment ? 'selected' : ''}`}
                         onClick={() => {}}
                       >
                         {/* Day number */}
@@ -647,7 +647,7 @@ export const RecipeDetailPage = () => {
                         <div className="meal-slots">
                           {/* Lunch slot */}
                           <div
-                            className={`meal-slot lunch-slot ${planMealDate === formatDateForAPI(day.date) && planMealMoment === 'lunch' ? 'selected' : ''}`}
+                            className={`meal-slot lunch-slot ${planMealDate === formatDate(day.date) && planMealMoment === 'lunch' ? 'selected' : ''}`}
                             onClick={() => handleCalendarCellClick(day, 'lunch')}
                           >
                             {day.lunchMeal ? (
@@ -661,7 +661,7 @@ export const RecipeDetailPage = () => {
                           
                           {/* Dinner slot */}
                           <div
-                            className={`meal-slot dinner-slot ${planMealDate === formatDateForAPI(day.date) && planMealMoment === 'dinner' ? 'selected' : ''}`}
+                            className={`meal-slot dinner-slot ${planMealDate === formatDate(day.date) && planMealMoment === 'dinner' ? 'selected' : ''}`}
                             onClick={() => handleCalendarCellClick(day, 'dinner')}
                           >
                             {day.dinnerMeal ? (

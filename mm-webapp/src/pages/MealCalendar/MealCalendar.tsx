@@ -409,7 +409,7 @@ export const MealCalendarPage = () => {
                   <div className="meal-slots">
                     {/* Lunch slot */}
                     <div
-                      className="meal-slot lunch-slot"
+                      className={`meal-slot lunch-slot ${day.lunchMeal ? 'has-meal selected' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCellClick(day, 'lunch');
@@ -448,7 +448,7 @@ export const MealCalendarPage = () => {
                     
                     {/* Dinner slot */}
                     <div
-                      className="meal-slot dinner-slot"
+                      className={`meal-slot dinner-slot ${day.dinnerMeal ? 'has-meal selected' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCellClick(day, 'dinner');
@@ -603,7 +603,18 @@ export const MealCalendarPage = () => {
                    {/* Recipes cards - 3 per line */}
                    <div className="row g-3" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                      {filteredRecipes.length > 0 ? (
-                       filteredRecipes.slice(0, 6).map(recipe => (
+                       /* Sort recipes: selected first, then others */
+                       (() => {
+                         const sortedRecipes = [...filteredRecipes];
+                         if (selectedMeal) {
+                           const selectedIndex = sortedRecipes.findIndex(r => r.id === selectedMeal.recipe_id);
+                           if (selectedIndex > -1) {
+                             const [selected] = sortedRecipes.splice(selectedIndex, 1);
+                             sortedRecipes.unshift(selected);
+                           }
+                         }
+                         return sortedRecipes;
+                       })().slice(0, 6).map(recipe => (
                          <div key={recipe.id} className="col-md-4 col-12">
                            <div className={`card h-100 ${selectedMeal?.recipe_id === recipe.id ? 'border-primary' : ''}`}>
                              <div className="card-body d-flex flex-column">
@@ -619,23 +630,34 @@ export const MealCalendarPage = () => {
                                  {recipe.servings} servings | {recipe.prep_time} prep | {recipe.cook_time} cook
                                </div>
                                <div className="mt-auto d-flex gap-2">
-                                 <Button
-                                   variant="outline-primary"
-                                   size="sm"
-                                   onClick={() => handleViewRecipeDetails(recipe)}
-                                 >
-                                   <i className="bi bi-eye me-1"></i>
-                                   View
-                                 </Button>
-                                 <Button
-                                   variant="primary"
-                                   size="sm"
-                                   onClick={() => handleSelectRecipe(recipe)}
-                                 >
-                                   <i className="bi bi-check me-1"></i>
-                                   Select
-                                 </Button>
-                               </div>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => handleViewRecipeDetails(recipe)}
+                                  >
+                                    <i className="bi bi-eye me-1"></i>
+                                    View
+                                  </Button>
+                                  {selectedMeal?.recipe_id === recipe.id ? (
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      onClick={() => setSelectedMeal(null)}
+                                    >
+                                      <i className="bi bi-x me-1"></i>
+                                      Cancel
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      onClick={() => handleSelectRecipe(recipe)}
+                                    >
+                                      <i className="bi bi-check me-1"></i>
+                                      Select
+                                    </Button>
+                                  )}
+                                </div>
                              </div>
                            </div>
                          </div>
