@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from .config import get_settings
 from .controllers.rest.exceptions import register_exception_handlers
 from .controllers.rest.grocery_routes import router as groceries_router
+from .controllers.rest.meal_routes import router as meals_router
 from .controllers.rest.middlewares import add_middleware
 from .controllers.rest.recipe_draft_routes import router as recipe_drafts_router
 from .controllers.rest.recipe_routes import router as recipes_router
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(recipes_router, prefix="/api/v1", tags=["recipes"])
     app.include_router(recipe_drafts_router, prefix="/api/v1", tags=["recipe-drafts"])
     app.include_router(groceries_router, prefix="/api/v1", tags=["groceries"])
+    app.include_router(meals_router, prefix="/api/v1", tags=["meals"])
     app.include_router(stats_router, prefix="/api/v1", tags=["stats"])
 
     @app.get("/health")

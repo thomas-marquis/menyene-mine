@@ -14,16 +14,19 @@ from langchain_mistralai import ChatMistralAI
 
 from .config import get_settings
 from .domain.ports.grocery_repository import GroceryRepositoryPort
+from .domain.ports.meal_repository import MealRepositoryPort
 from .domain.ports.recipe_draft_repository import RecipeDraftRepositoryPort
 from .domain.ports.recipe_repository import RecipeRepositoryPort
 from .infra.db import AsyncSession, get_session
 from .infra.repositories.grocery_repository import GroceryRepositoryImpl
+from .infra.repositories.meal_repository import MealRepositoryImpl
 from .infra.repositories.recipe_draft_repository import RecipeDraftRepositoryImpl
 from .infra.repositories.recipe_repository import RecipeRepositoryImpl
 from .services import MockRecipeAIGenerator, RecipeAIGenerator
 from .services.judge import Judge, LLMJudge, MockJudge
 from .services.recipe_generator import RecipeGenerator
 from .use_cases.grocery_use_cases import GroceryUseCases
+from .use_cases.meal_use_cases import MealUseCases
 from .use_cases.recipe_draft_use_cases import RecipeDraftUseCases
 from .use_cases.recipe_generation_workflow import RecipeGenerationWorkflow
 from .use_cases.recipe_use_cases import RecipeUseCases
@@ -38,6 +41,8 @@ _recipe_draft_repository: ContextVar[RecipeDraftRepositoryPort | None] = Context
 _recipe_draft_use_cases: ContextVar[RecipeDraftUseCases | None] = ContextVar("recipe_draft_use_cases", default=None)
 _grocery_repository: ContextVar[GroceryRepositoryPort | None] = ContextVar("grocery_repository", default=None)
 _grocery_use_cases: ContextVar[GroceryUseCases | None] = ContextVar("grocery_use_cases", default=None)
+_meal_repository: ContextVar[MealRepositoryPort | None] = ContextVar("meal_repository", default=None)
+_meal_use_cases: ContextVar[MealUseCases | None] = ContextVar("meal_use_cases", default=None)
 _stats_use_cases: ContextVar[StatsUseCases | None] = ContextVar("stats_use_cases", default=None)
 _recipe_generation_workflow: ContextVar[RecipeGenerationWorkflow | None] = ContextVar(
     "recipe_generation_workflow", default=None
@@ -107,6 +112,25 @@ def get_grocery_use_cases(
     if _grocery_use_cases.get() is None:
         _grocery_use_cases.set(GroceryUseCases(repository))
     return _grocery_use_cases.get()  # type: ignore
+
+
+def get_meal_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> MealRepositoryPort:
+    """Dependency for MealRepository."""
+    if _meal_repository.get() is None:
+        _meal_repository.set(MealRepositoryImpl(session))
+    return _meal_repository.get()  # type: ignore
+
+
+def get_meal_use_cases(
+    meal_repository: Annotated[MealRepositoryPort, Depends(get_meal_repository)],
+    recipe_repository: Annotated[RecipeRepositoryPort, Depends(get_recipe_repository)],
+) -> MealUseCases:
+    """Dependency for MealUseCases."""
+    if _meal_use_cases.get() is None:
+        _meal_use_cases.set(MealUseCases(meal_repository, recipe_repository))
+    return _meal_use_cases.get()  # type: ignore
 
 
 def get_recipe_draft_repository(
@@ -240,6 +264,13 @@ def override_grocery_repository(
 ) -> None:
     """Override dependency for GroceryRepository."""
     _grocery_repository.set(impl)
+
+
+def override_meal_repository(
+    impl: MealRepositoryPort,
+) -> None:
+    """Override dependency for MealRepository."""
+    _meal_repository.set(impl)
 
 
 def override_llm(

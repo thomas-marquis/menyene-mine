@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
@@ -177,3 +177,43 @@ class StatsResponse(BaseModel):
     recipes: RecipeStatsResponse
     drafts: DraftStatsResponse
     groceries: GroceryStatsResponse
+
+
+# Meal Schemas
+class MealCreate(BaseModel):
+    """Request schema for creating a meal."""
+
+    date: date
+    moment: Annotated[str, StringConstraints(strip_whitespace=True)]  # "lunch" or "dinner"
+    recipe_id: int
+
+
+class MealUpdate(BaseModel):
+    """Request schema for updating a meal (only recipe_id can be updated)."""
+
+    recipe_id: int
+
+
+class MealResponse(BaseModel):
+    """Response schema for a meal."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    date: date
+    moment: str
+    recipe_id: int
+    recipe_title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class MealListResponse(BaseModel):
+    """Response schema for listing meals."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    meals: list[MealResponse]
+    total: int
+    year: int
+    month: int
