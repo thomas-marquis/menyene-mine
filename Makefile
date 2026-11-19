@@ -33,7 +33,7 @@ format:
 
 # Type check
 typecheck:
-	uv run mypy .
+	uv run mypy src/
 
 # Tests
 test: test-unit test-integration
