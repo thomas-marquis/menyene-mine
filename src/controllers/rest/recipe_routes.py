@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ...di import get_recipe_use_cases
 from ...domain.entities.recipe import Recipe
+from ...domain.entities.search_result import SearchResult
 from ...use_cases.recipe_use_cases import RecipeUseCases
 from .schemas import (
     RecipeCreate,
@@ -58,13 +59,12 @@ async def list_recipes_endpoint(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of items to return"),
 ) -> RecipeListResponse:
     """List all recipes with pagination."""
-    recipes = await use_cases.list_recipes(skip=skip, limit=limit)
-    total = len(recipes)
+    search_result: SearchResult = await use_cases.list_recipes(skip=skip, limit=limit)
     return RecipeListResponse(
-        recipes=[_recipe_to_response(r) for r in recipes],
-        total=total,
-        skip=skip,
-        limit=limit,
+        recipes=[_recipe_to_response(r) for r in search_result.recipes],
+        total=search_result.total,
+        skip=search_result.skip,
+        limit=search_result.limit,
     )
 
 
@@ -76,13 +76,12 @@ async def search_recipes_endpoint(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of items to return"),
 ) -> RecipeListResponse:
     """Search recipes by keyword in title or content."""
-    recipes = await use_cases.search_recipes(keyword=keyword, skip=skip, limit=limit)
-    total = len(recipes)
+    search_result: SearchResult = await use_cases.search_recipes(keyword=keyword, skip=skip, limit=limit)
     return RecipeListResponse(
-        recipes=[_recipe_to_response(r) for r in recipes],
-        total=total,
-        skip=skip,
-        limit=limit,
+        recipes=[_recipe_to_response(r) for r in search_result.recipes],
+        total=search_result.total,
+        skip=search_result.skip,
+        limit=search_result.limit,
     )
 
 

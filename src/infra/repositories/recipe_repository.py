@@ -1,7 +1,8 @@
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...domain.entities.recipe import Recipe as RecipeEntity
+from ...domain.entities.search_result import SearchResult
 from ...domain.ports.recipe_repository import RecipeRepositoryPort
 from ..models.recipe import Recipe as RecipeModel
 
@@ -111,31 +112,43 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
         await self._session.commit()
         return True
 
-    async def list_all(self, skip: int = 0, limit: int = 100) -> list[RecipeEntity]:
+    async def list_all(self, skip: int = 0, limit: int = 100) -> SearchResult:
         """List all recipes with pagination."""
+        # Get the recipes for the current page
         result = await self._session.execute(
             select(RecipeModel).order_by(RecipeModel.creation_date.desc()).offset(skip).limit(limit)
         )
         recipes = result.scalars().all()
-        return [
-            RecipeEntity(
-                id=r.id,
-                title=r.title,
-                creation_date=r.creation_date,
-                last_updated=r.last_updated,
-                summary=r.summary,
-                ingredients=r.ingredients,
-                instructions=r.instructions,
-                servings=r.servings,
-                prep_time=r.prep_time,
-                cook_time=r.cook_time,
-                difficulty=r.difficulty,
-            )
-            for r in recipes
-        ]
 
-    async def search(self, keyword: str, skip: int = 0, limit: int = 100) -> list[RecipeEntity]:
+        # Get the total count
+        count_result = await self._session.execute(select(func.count()).select_from(RecipeModel))
+        total = count_result.scalar() or 0
+
+        return SearchResult(
+            recipes=[
+                RecipeEntity(
+                    id=r.id,
+                    title=r.title,
+                    creation_date=r.creation_date,
+                    last_updated=r.last_updated,
+                    summary=r.summary,
+                    ingredients=r.ingredients,
+                    instructions=r.instructions,
+                    servings=r.servings,
+                    prep_time=r.prep_time,
+                    cook_time=r.cook_time,
+                    difficulty=r.difficulty,
+                )
+                for r in recipes
+            ],
+            total=total,
+            skip=skip,
+            limit=limit,
+        )
+
+    async def search(self, keyword: str, skip: int = 0, limit: int = 100) -> SearchResult:
         """Search recipes by keyword in title, summary, ingredients, or instructions."""
+        # Get the recipes for the current page
         result = await self._session.execute(
             select(RecipeModel)
             .where(
@@ -149,27 +162,42 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             .limit(limit)
         )
         recipes = result.scalars().all()
-        return [
-            RecipeEntity(
-                id=r.id,
-                title=r.title,
-                creation_date=r.creation_date,
-                last_updated=r.last_updated,
-                summary=r.summary,
-                ingredients=r.ingredients,
-                instructions=r.instructions,
-                servings=r.servings,
-                prep_time=r.prep_time,
-                cook_time=r.cook_time,
-                difficulty=r.difficulty,
-            )
-            for r in recipes
-        ]
 
-    async def count_all(self) -> int:
-        """Count all recipes."""
-        result = await self._session.execute(select(RecipeModel))
-        return len(result.scalars().all())
+        # Get the total count for this search
+        count_result = await self._session.execute(
+            select(func.count())
+            .select_from(RecipeModel)
+            .where(
+                or_(
+                    RecipeModel.title.ilike(f"%{keyword}%"),
+                    RecipeModel.summary.ilike(f"%{keyword}%"),
+                )
+            )
+        )
+        total = count_result.scalar() or 0
+
+        return SearchResult(
+            recipes=[
+                RecipeEntity(
+                    id=r.id,
+                    title=r.title,
+                    creation_date=r.creation_date,
+                    last_updated=r.last_updated,
+                    summary=r.summary,
+                    ingredients=r.ingredients,
+                    instructions=r.instructions,
+                    servings=r.servings,
+                    prep_time=r.prep_time,
+                    cook_time=r.cook_time,
+                    difficulty=r.difficulty,
+                )
+                for r in recipes
+            ],
+            total=total,
+            query=keyword,
+            skip=skip,
+            limit=limit,
+        )
 
     async def update_instructions(self, recipe_id: int, instructions: list[str]) -> RecipeEntity | None:
         """Update only the instructions for a recipe."""

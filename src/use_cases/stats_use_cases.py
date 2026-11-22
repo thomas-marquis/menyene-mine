@@ -28,12 +28,13 @@ class StatsUseCases:
         grocery_total: int
         grocery_completed: int
 
-        recipe_count, draft_stats, grocery_total, grocery_completed = await asyncio.gather(
-            self._recipe_repository.count_all(),
+        search_result, draft_stats, grocery_total, grocery_completed = await asyncio.gather(
+            self._recipe_repository.list_all(skip=0, limit=1),
             self._draft_repository.get_status_counts(),
             self._grocery_repository.count_all(),
             self._grocery_repository.count_by_completed(True),
         )
+        recipe_count = search_result.total
 
         grocery_active = grocery_total - grocery_completed
 

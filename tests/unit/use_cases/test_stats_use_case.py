@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from src.domain.entities.search_result import SearchResult
 from src.domain.entities.stats import AppStats, DraftStats, GroceryStats, RecipeStats
 from src.infra.repositories.grocery_repository import GroceryRepositoryImpl
 from src.infra.repositories.recipe_draft_repository import RecipeDraftRepositoryImpl
@@ -17,7 +18,7 @@ class TestStatsUseCases:
         mock_draft_repo = AsyncMock(spec=RecipeDraftRepositoryImpl)
         mock_grocery_repo = AsyncMock(spec=GroceryRepositoryImpl)
 
-        mock_recipe_repo.count_all.return_value = 0
+        mock_recipe_repo.list_all.return_value = SearchResult(recipes=[], total=0, skip=0, limit=1)
         mock_draft_repo.get_status_counts.return_value = DraftStats(
             total_count=0,
             draft_count=0,
@@ -54,7 +55,7 @@ class TestStatsUseCases:
         mock_draft_repo = AsyncMock(spec=RecipeDraftRepositoryImpl)
         mock_grocery_repo = AsyncMock(spec=GroceryRepositoryImpl)
 
-        mock_recipe_repo.count_all.return_value = 10
+        mock_recipe_repo.list_all.return_value = SearchResult(recipes=[], total=10, skip=0, limit=1)
         mock_draft_repo.get_status_counts.return_value = DraftStats(
             total_count=15,
             draft_count=8,
@@ -95,7 +96,7 @@ class TestStatsUseCases:
         mock_draft_repo = AsyncMock(spec=RecipeDraftRepositoryImpl)
         mock_grocery_repo = AsyncMock(spec=GroceryRepositoryImpl)
 
-        mock_recipe_repo.count_all.return_value = 5
+        mock_recipe_repo.list_all.return_value = SearchResult(recipes=[], total=5, skip=0, limit=1)
         mock_draft_repo.get_status_counts.return_value = DraftStats(
             total_count=3,
             draft_count=2,
@@ -126,7 +127,7 @@ class TestStatsUseCases:
         mock_draft_repo = AsyncMock(spec=RecipeDraftRepositoryImpl)
         mock_grocery_repo = AsyncMock(spec=GroceryRepositoryImpl)
 
-        mock_recipe_repo.count_all.return_value = 0
+        mock_recipe_repo.list_all.return_value = SearchResult(recipes=[], total=0, skip=0, limit=1)
         mock_draft_repo.get_status_counts.return_value = DraftStats(
             total_count=0,
             draft_count=0,
@@ -146,7 +147,7 @@ class TestStatsUseCases:
         await use_cases.get_all_stats()
 
         # Then
-        mock_recipe_repo.count_all.assert_called_once()
+        mock_recipe_repo.list_all.assert_called_once_with(skip=0, limit=1)
         mock_draft_repo.get_status_counts.assert_called_once()
         mock_grocery_repo.count_all.assert_called_once()
         mock_grocery_repo.count_by_completed.assert_called_once_with(True)
@@ -158,7 +159,7 @@ class TestStatsUseCases:
         mock_draft_repo = AsyncMock(spec=RecipeDraftRepositoryImpl)
         mock_grocery_repo = AsyncMock(spec=GroceryRepositoryImpl)
 
-        mock_recipe_repo.count_all.return_value = 150
+        mock_recipe_repo.list_all.return_value = SearchResult(recipes=[], total=150, skip=0, limit=1)
         mock_draft_repo.get_status_counts.return_value = DraftStats(
             total_count=200,
             draft_count=100,
@@ -192,7 +193,7 @@ class TestStatsUseCases:
         mock_draft_repo = AsyncMock(spec=RecipeDraftRepositoryImpl)
         mock_grocery_repo = AsyncMock(spec=GroceryRepositoryImpl)
 
-        mock_recipe_repo.count_all.return_value = 0
+        mock_recipe_repo.list_all.return_value = SearchResult(recipes=[], total=0, skip=0, limit=1)
         mock_draft_repo.get_status_counts.return_value = DraftStats(
             total_count=10,
             draft_count=0,
@@ -224,7 +225,7 @@ class TestStatsUseCases:
         mock_draft_repo = AsyncMock(spec=RecipeDraftRepositoryImpl)
         mock_grocery_repo = AsyncMock(spec=GroceryRepositoryImpl)
 
-        mock_recipe_repo.count_all.return_value = 0
+        mock_recipe_repo.list_all.return_value = SearchResult(recipes=[], total=0, skip=0, limit=1)
         mock_draft_repo.get_status_counts.return_value = DraftStats(
             total_count=0,
             draft_count=0,

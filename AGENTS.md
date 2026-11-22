@@ -109,6 +109,13 @@ Python 3.13, line-length 120, strict mypy. CI order: lint → format → typeche
 - This reduces coupling and makes dependencies explicit
 - Example: `def __init__(self, llm: BaseChatModel, max_retries: int = 3)` not `def __init__(self, llm: BaseChatModel, settings: Settings)`
 
+**JSDoc Rules:**
+- **ONLY** add JSDoc on component definitions, props/interface definitions, and exported-file-root-level functions
+- **NEVER** add JSDoc on inner functions or private methods
+- **NEVER** add inline comments to explain what code does - use meaningful names instead
+- Use clear and descriptive names for variables, functions, and parameters that make the purpose obvious
+- Example: Use `fetchRecipesFromServer` instead of `// This function fetches recipes from the server`
+
 ## Database
 
 SQLite + aiosqlite async, SQLAlchemy ORM. Session via `AsyncSession` from `src/infra/db.py`.

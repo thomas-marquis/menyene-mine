@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from ..entities.recipe import Recipe
+from ..entities.search_result import SearchResult
 
 
 class RecipeRepositoryPort(ABC):
@@ -27,18 +28,13 @@ class RecipeRepositoryPort(ABC):
         ...
 
     @abstractmethod
-    async def list_all(self, skip: int = 0, limit: int = 100) -> list[Recipe]:
+    async def list_all(self, skip: int = 0, limit: int = 100) -> SearchResult:
         """List all recipes with pagination."""
         ...
 
     @abstractmethod
-    async def search(self, keyword: str, skip: int = 0, limit: int = 100) -> list[Recipe]:
+    async def search(self, keyword: str, skip: int = 0, limit: int = 100) -> SearchResult:
         """Search recipes by keyword in title or content."""
-        ...
-
-    @abstractmethod
-    async def count_all(self) -> int:
-        """Count all recipes."""
         ...
 
     @abstractmethod

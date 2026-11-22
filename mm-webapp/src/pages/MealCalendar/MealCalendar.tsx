@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Badge, Button, Container, Spinner, Alert, Modal, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { Button, Container, Spinner, Alert, Modal, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { mealService } from '../../services/mealService';
-import { recipeService } from '../../services/recipeService';
+
 import type { Meal, MealMoment, CalendarMonth, CalendarDay } from '../../types/meal.types';
 import type { Recipe } from '../../types/recipe.types';
+import { RecipeSelectionModal } from './components';
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_NAMES = [
@@ -12,13 +12,11 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-// Helper function to get calendar data for a month
 function getCalendarMonth(year: number, month: number, meals: Meal[]): CalendarMonth {
   const date = new Date(year, month - 1, 1);
-  const firstDay = date.getDay(); // 0 (Sunday) to 6 (Saturday)
+  const firstDay = date.getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
   
-  // Get meals indexed by date and moment for quick lookup
   const mealsMap: Record<string, Record<MealMoment, Meal>> = {};
   meals.forEach(meal => {
     const dateStr = meal.date;
@@ -27,16 +25,11 @@ function getCalendarMonth(year: number, month: number, meals: Meal[]): CalendarM
     }
     mealsMap[dateStr][meal.moment] = meal;
   });
-
-  // Build calendar days
+  
   const days: CalendarDay[] = [];
   
-  // Calculate how many days from previous month to show (to start from Monday)
-  // If firstDay is 0 (Sunday), we need to show 6 days from previous month to start from Monday
-  // If firstDay is 1 (Monday), we need to show 0 days from previous month
   const daysFromPrevMonth = firstDay === 0 ? 6 : firstDay - 1;
   
-  // Add days from previous month to fill the first week (to start from Monday)
   const prevMonthDays = new Date(year, month - 1, 0).getDate();
   for (let i = daysFromPrevMonth - 1; i >= 0; i--) {
     const day = prevMonthDays - i;
@@ -52,8 +45,7 @@ function getCalendarMonth(year: number, month: number, meals: Meal[]): CalendarM
       dinnerMeal: null,
     });
   }
-
-  // Add days from current month
+  
   const today = new Date();
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(year, month - 1, day);
@@ -71,8 +63,7 @@ function getCalendarMonth(year: number, month: number, meals: Meal[]): CalendarM
       dinnerMeal: mealsMap[dateStr]?.dinner || null,
     });
   }
-
-  // Add days from next month to fill the last week
+  
   const totalDays = days.length;
   const remainingDays = 7 - (totalDays % 7);
   if (remainingDays < 7) {
@@ -90,13 +81,12 @@ function getCalendarMonth(year: number, month: number, meals: Meal[]): CalendarM
       });
     }
   }
-
-  // Split into weeks
+  
   const weeks: { days: CalendarDay[] }[] = [];
   for (let i = 0; i < days.length; i += 7) {
     weeks.push({ days: days.slice(i, i + 7) });
   }
-
+  
   return {
     year,
     month,
@@ -105,7 +95,6 @@ function getCalendarMonth(year: number, month: number, meals: Meal[]): CalendarM
   };
 }
 
-// Helper to format date for display (YYYY-MM-DD)
 function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -113,43 +102,30 @@ function formatDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-// Helper to truncate text
 function truncateText(text: string, maxLength: number = 15): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength - 3) + '...';
 }
 
 export const MealCalendarPage = () => {
-  const navigate = useNavigate();
-  
-  // State for calendar
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // State for modals
   const [showRecipeModal, setShowRecipeModal] = useState<boolean>(false);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedMoment, setSelectedMoment] = useState<MealMoment | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
-   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-   const [showRecipeDetails, setShowRecipeDetails] = useState<boolean>(false);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [recipesLoading, setRecipesLoading] = useState<boolean>(false);
-  const [recipesError, setRecipesError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
   const [confirmMessage, setConfirmMessage] = useState<string>('');
-  
-  // Fetch meals for current month
+
   const fetchMeals = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1; // Months are 1-indexed
+      const month = currentDate.getMonth() + 1;
       const response = await mealService.getMealsForMonth(year, month);
       setMeals(response.meals);
     } catch (err: any) {
@@ -166,28 +142,6 @@ export const MealCalendarPage = () => {
     }
   }, [currentDate]);
 
-  // Fetch recipes for modal
-  const fetchRecipes = useCallback(async () => {
-    try {
-      setRecipesLoading(true);
-      setRecipesError(null);
-      const response = await recipeService.getAllRecipes(0, 1000);
-      setRecipes(response.recipes);
-    } catch (err: any) {
-      if (err.response) {
-        setRecipesError('Failed to fetch recipes. Please try again later.');
-      } else if (err.request) {
-        setRecipesError('Network error. Please check your connection.');
-      } else {
-        setRecipesError('Failed to fetch recipes. Please try again later.');
-      }
-      console.error('Error fetching recipes:', err);
-    } finally {
-      setRecipesLoading(false);
-    }
-  }, []);
-
-  // Navigation handlers
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
@@ -200,26 +154,26 @@ export const MealCalendarPage = () => {
     setCurrentDate(new Date());
   };
 
-  // Handle cell click
   const handleCellClick = (day: CalendarDay, moment: MealMoment) => {
     if (!day.isCurrentMonth) return;
     
     const dateStr = formatDate(day.date);
     const existingMeal = moment === 'lunch' ? day.lunchMeal : day.dinnerMeal;
     
-    setSelectedDate(dateStr);
-    setSelectedMoment(moment);
-    setSelectedMeal(existingMeal);
-    setSearchQuery('');
-    setShowRecipeModal(true);
+    const mealToEdit = existingMeal || {
+      id: 0,
+      date: dateStr,
+      moment,
+      recipe_id: 0,
+      recipe_title: '',
+      created_at: '',
+      updated_at: '',
+    };
     
-    // Fetch recipes if not already loaded
-    if (recipes.length === 0) {
-      fetchRecipes();
-    }
+    setSelectedMeal(mealToEdit);
+    setShowRecipeModal(true);
   };
 
-  // Handle remove meal
   const handleRemoveMeal = (day: CalendarDay, moment: MealMoment, e: React.MouseEvent) => {
     e.stopPropagation();
     const meal = moment === 'lunch' ? day.lunchMeal : day.dinnerMeal;
@@ -238,32 +192,17 @@ export const MealCalendarPage = () => {
     setShowConfirmModal(true);
   };
 
-  // Handle view recipe details
-  const handleViewRecipeDetails = (recipe: Recipe) => {
-    setSelectedRecipe(recipe);
-    setShowRecipeDetails(true);
-  };
-
-  // Handle back to selection
-  const handleBackToSelection = () => {
-    setShowRecipeDetails(false);
-    setSelectedRecipe(null);
-  };
-
-  // Handle recipe selection
   const handleSelectRecipe = async (recipe: Recipe) => {
-    if (!selectedDate || !selectedMoment) return;
+    if (!selectedMeal) return;
     
     try {
-      // If there's an existing meal, we need to replace it
-      if (selectedMeal) {
-        setConfirmMessage(`A meal already exists for ${selectedDate} ${selectedMoment}. Replace it with ${recipe.title}?`);
+      if (selectedMeal.id) {
+        setConfirmMessage(`A meal already exists for ${selectedMeal.date} ${selectedMeal.moment}. Replace it with ${recipe.title}?`);
         setConfirmAction(() => async () => {
           try {
             await mealService.updateMeal(selectedMeal.id, { recipe_id: recipe.id });
             setShowRecipeModal(false);
-            setShowRecipeDetails(false);
-            setSelectedRecipe(null);
+            setSelectedMeal(null);
             fetchMeals();
           } catch (err) {
             setError('Failed to update meal. Please try again.');
@@ -272,20 +211,17 @@ export const MealCalendarPage = () => {
         });
         setShowConfirmModal(true);
       } else {
-        // Create new meal
         await mealService.createMeal({
-          date: selectedDate,
-          moment: selectedMoment,
+          date: selectedMeal.date,
+          moment: selectedMeal.moment,
           recipe_id: recipe.id,
         });
         setShowRecipeModal(false);
-        setShowRecipeDetails(false);
-        setSelectedRecipe(null);
+        setSelectedMeal(null);
         fetchMeals();
       }
     } catch (err: any) {
       if (err.response?.status === 409) {
-        // Conflict - meal already exists
         setError('A meal already exists for this date and time. Please select a different slot.');
       } else {
         setError('Failed to save meal. Please try again.');
@@ -294,22 +230,6 @@ export const MealCalendarPage = () => {
     }
   };
 
-  // Handle view recipe details
-  const handleViewRecipe = (recipeId: number) => {
-    navigate(`/recipes/${recipeId}`);
-  };
-
-  // Filter recipes based on search query
-  const filteredRecipes = useMemo(() => {
-    if (!searchQuery.trim()) return recipes;
-    const query = searchQuery.toLowerCase();
-    return recipes.filter(recipe => 
-      recipe.title.toLowerCase().includes(query) ||
-      recipe.summary.toLowerCase().includes(query)
-    );
-  }, [recipes, searchQuery]);
-
-  // Get calendar data
   const calendar = useMemo(() => {
     return getCalendarMonth(
       currentDate.getFullYear(),
@@ -318,7 +238,6 @@ export const MealCalendarPage = () => {
     );
   }, [currentDate, meals]);
 
-  // Load initial data
   useEffect(() => {
     fetchMeals();
   }, [fetchMeals]);
@@ -342,7 +261,6 @@ export const MealCalendarPage = () => {
         </Alert>
       )}
 
-      {/* Header */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
         <div>
           <h1 className="mb-0" style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50' }}>
@@ -381,9 +299,7 @@ export const MealCalendarPage = () => {
         </div>
       </div>
 
-      {/* Calendar */}
       <div className="calendar-container">
-        {/* Day headers */}
         <div className="calendar-header">
           {DAYS_OF_WEEK.map(day => (
             <div key={day} className="calendar-day-header">
@@ -392,7 +308,6 @@ export const MealCalendarPage = () => {
           ))}
         </div>
 
-        {/* Calendar days */}
         <div className="calendar-body">
           {calendar.weeks.map((week, weekIndex) => (
             <div key={weekIndex} className="calendar-week">
@@ -402,12 +317,9 @@ export const MealCalendarPage = () => {
                   className={`calendar-day ${day.isCurrentMonth ? 'current-month' : 'other-month'} ${day.isToday ? 'today' : ''}`}
                   onClick={() => {}}
                 >
-                  {/* Day number */}
                   <div className="day-number">{day.day}</div>
                   
-                  {/* Meal slots */}
                   <div className="meal-slots">
-                    {/* Lunch slot */}
                     <div
                       className={`meal-slot lunch-slot ${day.lunchMeal ? 'has-meal selected' : ''}`}
                       onClick={(e) => {
@@ -423,8 +335,6 @@ export const MealCalendarPage = () => {
                               <Tooltip id={`lunch-tooltip-${day.year}-${day.month}-${day.day}`}>
                                 <div>
                                   <strong>{day.lunchMeal.recipe_title}</strong>
-                                  <br />
-                                  <small>{day.lunchMeal.summary}</small>
                                 </div>
                               </Tooltip>
                             }
@@ -446,7 +356,6 @@ export const MealCalendarPage = () => {
                       )}
                     </div>
                     
-                    {/* Dinner slot */}
                     <div
                       className={`meal-slot dinner-slot ${day.dinnerMeal ? 'has-meal selected' : ''}`}
                       onClick={(e) => {
@@ -462,8 +371,6 @@ export const MealCalendarPage = () => {
                               <Tooltip id={`dinner-tooltip-${day.year}-${day.month}-${day.day}`}>
                                 <div>
                                   <strong>{day.dinnerMeal.recipe_title}</strong>
-                                  <br />
-                                  <small>{day.dinnerMeal.summary}</small>
                                 </div>
                               </Tooltip>
                             }
@@ -492,203 +399,18 @@ export const MealCalendarPage = () => {
         </div>
       </div>
 
-      {/* Recipe Selection Modal */}
-      <Modal
-        show={showRecipeModal}
-        onHide={() => {
-          setShowRecipeModal(false);
-          setShowRecipeDetails(false);
-          setSelectedRecipe(null);
-        }}
-        size="lg"
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {showRecipeDetails && selectedRecipe ? selectedRecipe.title : selectedMeal ? 'Change Meal' : 'Select Recipe'}
-            {selectedDate && selectedMoment && !showRecipeDetails && (
-              <span className="text-muted ms-2">
-                ({selectedDate} - {selectedMoment})
-              </span>
-            )}
-          </Modal.Title>
-          {showRecipeDetails && selectedRecipe && (
-            <div className="ms-auto d-flex gap-2">
-              <Button variant="secondary" size="sm" onClick={handleBackToSelection}>
-                <i className="bi bi-arrow-left me-1"></i>
-                Back
-              </Button>
-              <Button variant="primary" size="sm" onClick={() => handleSelectRecipe(selectedRecipe)}>
-                <i className="bi bi-check me-1"></i>
-                Select
-              </Button>
-            </div>
-          )}
-        </Modal.Header>
-        <Modal.Body>
-          {showRecipeDetails && selectedRecipe ? (
-            /* Recipe Details View */
-            <div className="recipe-details">
-              <h4 className="mb-3">{selectedRecipe.title}</h4>
-              <p className="text-muted mb-4">{selectedRecipe.summary}</p>
-              
-              <div className="mb-4">
-                <h5>Ingredients</h5>
-                <ul className="list-unstyled">
-                  {selectedRecipe.ingredients.map((ingredient, index) => (
-                    <li key={index} className="mb-1">
-                      <i className="bi bi-circle-fill text-primary me-2" style={{ fontSize: '0.5rem' }}></i>
-                      {ingredient}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="mb-4">
-                <h5>Instructions</h5>
-                <ol className="list-group list-group-numbered">
-                  {selectedRecipe.instructions.map((instruction, index) => (
-                    <li key={index} className="list-group-item border-0 px-0 py-2">
-                      {instruction}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-              
-              <div className="d-flex flex-wrap gap-3 mb-4 text-muted small">
-                <Badge bg="light" text="secondary" className="p-2">
-                  <i className="bi bi-people me-1"></i>
-                  {selectedRecipe.servings} servings
-                </Badge>
-                <Badge bg="light" text="secondary" className="p-2">
-                  <i className="bi bi-clock me-1"></i>
-                  {selectedRecipe.prep_time} prep
-                </Badge>
-                <Badge bg="light" text="secondary" className="p-2">
-                  <i className="bi bi-oven me-1"></i>
-                  {selectedRecipe.cook_time} cook
-                </Badge>
-                <Badge bg="light" text="secondary" className="p-2">
-                  <i className="bi bi-graph-up me-1"></i>
-                  {selectedRecipe.difficulty}
-                </Badge>
-              </div>
-            </div>
-          ) : (
-            <>
-              {recipesError ? (
-                <Alert variant="danger">
-                  <strong>Error:</strong> {recipesError}
-                </Alert>
-              ) : recipesLoading && recipes.length === 0 ? (
-                <div className="text-center py-4">
-                  <Spinner animation="border" variant="primary" role="status" className="mb-3">
-                    <span className="visually-hidden">Loading...</span>
-                  </Spinner>
-                  <p>Loading recipes...</p>
-                </div>
-              ) : (
-                <>
-                  {/* Search */}
-                  <div className="mb-3">
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search recipes..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  
-                   {/* Recipes cards - 3 per line */}
-                   <div className="row g-3" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                     {filteredRecipes.length > 0 ? (
-                       /* Sort recipes: selected first, then others */
-                       (() => {
-                         const sortedRecipes = [...filteredRecipes];
-                         if (selectedMeal) {
-                           const selectedIndex = sortedRecipes.findIndex(r => r.id === selectedMeal.recipe_id);
-                           if (selectedIndex > -1) {
-                             const [selected] = sortedRecipes.splice(selectedIndex, 1);
-                             sortedRecipes.unshift(selected);
-                           }
-                         }
-                         return sortedRecipes;
-                       })().slice(0, 6).map(recipe => (
-                         <div key={recipe.id} className="col-md-4 col-12">
-                           <div className={`card h-100 ${selectedMeal?.recipe_id === recipe.id ? 'border-primary' : ''}`}>
-                             <div className="card-body d-flex flex-column">
-                               {selectedMeal?.recipe_id === recipe.id && (
-                                 <div className="selected-badge mb-2">
-                                   <i className="bi bi-check-circle-fill text-primary"></i>
-                                   <span className="ms-1 text-primary">Selected</span>
-                                 </div>
-                               )}
-                               <h5 className="card-title mb-2">{recipe.title}</h5>
-                               <p className="card-text text-muted small mb-3">{recipe.summary}</p>
-                               <div className="text-muted small mb-3">
-                                 {recipe.servings} servings | {recipe.prep_time} prep | {recipe.cook_time} cook
-                               </div>
-                               <div className="mt-auto d-flex gap-2">
-                                  <Button
-                                    variant="outline-primary"
-                                    size="sm"
-                                    onClick={() => handleViewRecipeDetails(recipe)}
-                                  >
-                                    <i className="bi bi-eye me-1"></i>
-                                    View
-                                  </Button>
-                                  {selectedMeal?.recipe_id === recipe.id ? (
-                                    <Button
-                                      variant="outline-danger"
-                                      size="sm"
-                                      onClick={() => setSelectedMeal(null)}
-                                    >
-                                      <i className="bi bi-x me-1"></i>
-                                      Cancel
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      variant="primary"
-                                      size="sm"
-                                      onClick={() => handleSelectRecipe(recipe)}
-                                    >
-                                      <i className="bi bi-check me-1"></i>
-                                      Select
-                                    </Button>
-                                  )}
-                                </div>
-                             </div>
-                           </div>
-                         </div>
-                       ))
-                     ) : (
-                       <div className="col-12 text-center py-4 text-muted">
-                         <p>No recipes found</p>
-                       </div>
-                     )}
-                   </div>
-                   
-                   {filteredRecipes.length > 6 && (
-                     <div className="text-center mt-3 text-muted small">
-                       Showing first 6 results
-                     </div>
-                   )}
-                </>
-              )}
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          {!showRecipeDetails && (
-            <Button variant="secondary" onClick={() => setShowRecipeModal(false)}>
-              Cancel
-            </Button>
-          )}
-        </Modal.Footer>
-      </Modal>
+      {showRecipeModal && (
+        <RecipeSelectionModal
+          show={showRecipeModal}
+          close={() => {
+            setShowRecipeModal(false);
+            setSelectedMeal(null);
+          }}
+          onRecipeSelected={handleSelectRecipe}
+          selectedMeal={selectedMeal}
+        />
+      )}
 
-      {/* Confirmation Modal */}
       <Modal
         show={showConfirmModal}
         onHide={() => setShowConfirmModal(false)}
