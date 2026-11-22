@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.domain.entities.recipe import Recipe
+from src.domain.entities.search_result import SearchResult
 from src.infra.repositories.recipe_repository import RecipeRepositoryImpl
 from src.use_cases.recipe_use_cases import RecipeUseCases
 
@@ -196,14 +197,15 @@ class TestRecipeUseCases:
     async def test_should_return_empty_list_when_no_recipes_exist(self) -> None:
         # Given
         mock_repo = AsyncMock(spec=RecipeRepositoryImpl)
-        mock_repo.list_all.return_value = []
+        mock_repo.list_all.return_value = SearchResult(recipes=[], total=0, skip=0, limit=100)
         use_cases = RecipeUseCases(mock_repo)
 
         # When
         result = await use_cases.list_recipes()
 
         # Then
-        assert result == []
+        assert result.recipes == []
+        assert result.total == 0
         mock_repo.list_all.assert_called_once_with(skip=0, limit=100)
 
     @pytest.mark.asyncio
@@ -238,16 +240,16 @@ class TestRecipeUseCases:
                 last_updated=None,
             ),
         ]
-        mock_repo.list_all.return_value = mock_recipes
+        mock_repo.list_all.return_value = SearchResult(recipes=mock_recipes, total=2, skip=0, limit=10)
         use_cases = RecipeUseCases(mock_repo)
 
         # When
         result = await use_cases.list_recipes(skip=0, limit=10)
 
         # Then
-        assert len(result) == 2
-        assert result[0].title == "Recipe 1"
-        assert result[1].title == "Recipe 2"
+        assert len(result.recipes) == 2
+        assert result.recipes[0].title == "Recipe 1"
+        assert result.recipes[1].title == "Recipe 2"
         mock_repo.list_all.assert_called_once_with(skip=0, limit=10)
 
     @pytest.mark.asyncio
@@ -269,15 +271,15 @@ class TestRecipeUseCases:
                 last_updated=None,
             ),
         ]
-        mock_repo.search.return_value = mock_recipes
+        mock_repo.search.return_value = SearchResult(recipes=mock_recipes, total=1, query="pasta", skip=0, limit=100)
         use_cases = RecipeUseCases(mock_repo)
 
         # When
         result = await use_cases.search_recipes(keyword="pasta")
 
         # Then
-        assert len(result) == 1
-        assert result[0].title == "Pasta Recipe"
+        assert len(result.recipes) == 1
+        assert result.recipes[0].title == "Pasta Recipe"
         mock_repo.search.assert_called_once_with(keyword="pasta", skip=0, limit=100)
 
     @pytest.mark.asyncio

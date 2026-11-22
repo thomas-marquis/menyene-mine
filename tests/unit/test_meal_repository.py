@@ -8,21 +8,21 @@ from src.infra.repositories.meal_repository import MealRepositoryImpl
 
 
 @pytest.fixture
-def mock_session():
+def mock_session() -> AsyncMock:
     """Create a mock AsyncSession for testing."""
     mock_session = AsyncMock()
     return mock_session
 
 
 @pytest.fixture
-def meal_repository(mock_session):
+def meal_repository(mock_session: AsyncMock) -> MealRepositoryImpl:
     """Create a MealRepositoryImpl instance with mock session."""
     return MealRepositoryImpl(mock_session)
 
 
 class TestCreate:
     @pytest.mark.asyncio
-    async def test_should_create_meal(self, meal_repository, mock_session):
+    async def test_should_create_meal(self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock) -> None:
         # Given
         meal = Meal(
             date=date(2026, 11, 18),
@@ -63,7 +63,9 @@ class TestCreate:
 
 class TestGetById:
     @pytest.mark.asyncio
-    async def test_should_return_meal_when_exists(self, meal_repository, mock_session):
+    async def test_should_return_meal_when_exists(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_meal_id = 1
         mock_meal_model = MagicMock()
@@ -84,12 +86,15 @@ class TestGetById:
 
         # Then
         mock_session.execute.assert_called_once()
+        assert result is not None
         assert result.id == test_meal_id
         assert result.date == date(2026, 11, 18)
         assert result.moment == MealMoment.LUNCH
 
     @pytest.mark.asyncio
-    async def test_should_return_none_when_not_exists(self, meal_repository, mock_session):
+    async def test_should_return_none_when_not_exists(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_meal_id = 999
 
@@ -107,7 +112,9 @@ class TestGetById:
 
 class TestGetByDateAndMoment:
     @pytest.mark.asyncio
-    async def test_should_return_meal_when_exists(self, meal_repository, mock_session):
+    async def test_should_return_meal_when_exists(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_date = date(2026, 11, 18)
         test_moment = MealMoment.LUNCH
@@ -129,12 +136,15 @@ class TestGetByDateAndMoment:
 
         # Then
         mock_session.execute.assert_called_once()
+        assert result is not None
         assert result.id == 1
         assert result.date == test_date
         assert result.moment == test_moment
 
     @pytest.mark.asyncio
-    async def test_should_return_none_when_not_exists(self, meal_repository, mock_session):
+    async def test_should_return_none_when_not_exists(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_date = date(2026, 11, 18)
         test_moment = MealMoment.LUNCH
@@ -153,7 +163,9 @@ class TestGetByDateAndMoment:
 
 class TestGetMealsForMonth:
     @pytest.mark.asyncio
-    async def test_should_return_meals_for_month(self, meal_repository, mock_session):
+    async def test_should_return_meals_for_month(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_year = 2026
         test_month = 11
@@ -191,7 +203,9 @@ class TestGetMealsForMonth:
         assert result[1].id == 2
 
     @pytest.mark.asyncio
-    async def test_should_return_empty_list_when_no_meals(self, meal_repository, mock_session):
+    async def test_should_return_empty_list_when_no_meals(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_year = 2026
         test_month = 11
@@ -210,7 +224,7 @@ class TestGetMealsForMonth:
 
 class TestUpdate:
     @pytest.mark.asyncio
-    async def test_should_update_meal(self, meal_repository, mock_session):
+    async def test_should_update_meal(self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock) -> None:
         # Given
         meal = Meal(
             id=1,
@@ -240,10 +254,13 @@ class TestUpdate:
         mock_session.execute.assert_called_once()
         mock_session.commit.assert_called_once()
         mock_session.refresh.assert_called_once()
+        assert result is not None
         assert result.recipe_id == 2
 
     @pytest.mark.asyncio
-    async def test_should_return_none_when_not_exists(self, meal_repository, mock_session):
+    async def test_should_return_none_when_not_exists(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         meal = Meal(
             id=999,
@@ -266,7 +283,7 @@ class TestUpdate:
 
 class TestDelete:
     @pytest.mark.asyncio
-    async def test_should_delete_meal(self, meal_repository, mock_session):
+    async def test_should_delete_meal(self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock) -> None:
         # Given
         test_meal_id = 1
 
@@ -283,7 +300,9 @@ class TestDelete:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_should_return_false_when_not_exists(self, meal_repository, mock_session):
+    async def test_should_return_false_when_not_exists(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_meal_id = 999
 
@@ -301,7 +320,9 @@ class TestDelete:
 
 class TestGetMealsByRecipeId:
     @pytest.mark.asyncio
-    async def test_should_return_meals_for_recipe(self, meal_repository, mock_session):
+    async def test_should_return_meals_for_recipe(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_recipe_id = 1
         mock_meal_models = [
@@ -338,7 +359,9 @@ class TestGetMealsByRecipeId:
         assert result[1].recipe_id == test_recipe_id
 
     @pytest.mark.asyncio
-    async def test_should_return_empty_list_when_no_meals(self, meal_repository, mock_session):
+    async def test_should_return_empty_list_when_no_meals(
+        self, meal_repository: MealRepositoryImpl, mock_session: AsyncMock
+    ) -> None:
         # Given
         test_recipe_id = 999
 

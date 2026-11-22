@@ -9,17 +9,17 @@ from src.use_cases.meal_use_cases import MealUseCases
 
 
 @pytest.fixture
-def mock_meal_repository():
+def mock_meal_repository() -> AsyncMock:
     return AsyncMock()
 
 
 @pytest.fixture
-def mock_recipe_repository():
+def mock_recipe_repository() -> AsyncMock:
     return AsyncMock()
 
 
 @pytest.fixture
-def meal_use_cases(mock_meal_repository, mock_recipe_repository):
+def meal_use_cases(mock_meal_repository: AsyncMock, mock_recipe_repository: AsyncMock) -> MealUseCases:
     return MealUseCases(
         meal_repository=mock_meal_repository,
         recipe_repository=mock_recipe_repository,
@@ -30,10 +30,10 @@ class TestCreateMeal:
     @pytest.mark.asyncio
     async def test_should_create_meal_when_recipe_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-        mock_recipe_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+        mock_recipe_repository: AsyncMock,
+    ) -> None:
         # Given
         test_date = date(2026, 11, 18)
         test_moment = MealMoment.LUNCH
@@ -64,10 +64,10 @@ class TestCreateMeal:
     @pytest.mark.asyncio
     async def test_should_raise_error_when_recipe_does_not_exist(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-        mock_recipe_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+        mock_recipe_repository: AsyncMock,
+    ) -> None:
         # Given
         test_date = date(2026, 11, 18)
         test_moment = MealMoment.LUNCH
@@ -82,10 +82,10 @@ class TestCreateMeal:
     @pytest.mark.asyncio
     async def test_should_raise_error_when_meal_already_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-        mock_recipe_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+        mock_recipe_repository: AsyncMock,
+    ) -> None:
         # Given
         test_date = date(2026, 11, 18)
         test_moment = MealMoment.LUNCH
@@ -108,9 +108,9 @@ class TestGetMeal:
     @pytest.mark.asyncio
     async def test_should_return_meal_when_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_date = date(2026, 11, 18)
         test_moment = MealMoment.LUNCH
@@ -133,9 +133,9 @@ class TestGetMeal:
     @pytest.mark.asyncio
     async def test_should_return_none_when_not_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_date = date(2026, 11, 18)
         test_moment = MealMoment.LUNCH
@@ -153,9 +153,9 @@ class TestGetMealById:
     @pytest.mark.asyncio
     async def test_should_return_meal_when_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_meal_id = 1
         expected_meal = Meal(
@@ -177,9 +177,9 @@ class TestGetMealById:
     @pytest.mark.asyncio
     async def test_should_return_none_when_not_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_meal_id = 999
 
@@ -196,9 +196,9 @@ class TestGetMealsForMonth:
     @pytest.mark.asyncio
     async def test_should_return_meals_for_month(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_year = 2026
         test_month = 11
@@ -231,10 +231,10 @@ class TestUpdateMeal:
     @pytest.mark.asyncio
     async def test_should_update_meal_when_recipe_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-        mock_recipe_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+        mock_recipe_repository: AsyncMock,
+    ) -> None:
         # Given
         test_meal_id = 1
         test_recipe_id = 2
@@ -262,15 +262,16 @@ class TestUpdateMeal:
         mock_recipe_repository.get_by_id.assert_called_once_with(test_recipe_id)
         mock_meal_repository.get_by_id.assert_called_once_with(test_meal_id)
         mock_meal_repository.update.assert_called_once()
+        assert result is not None
         assert result.recipe_id == test_recipe_id
 
     @pytest.mark.asyncio
     async def test_should_raise_error_when_recipe_does_not_exist(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-        mock_recipe_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+        mock_recipe_repository: AsyncMock,
+    ) -> None:
         # Given
         test_meal_id = 1
         test_recipe_id = 999
@@ -284,10 +285,10 @@ class TestUpdateMeal:
     @pytest.mark.asyncio
     async def test_should_return_none_when_meal_not_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-        mock_recipe_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+        mock_recipe_repository: AsyncMock,
+    ) -> None:
         # Given
         test_meal_id = 999
         test_recipe_id = 1
@@ -306,9 +307,9 @@ class TestDeleteMeal:
     @pytest.mark.asyncio
     async def test_should_delete_meal_when_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_meal_id = 1
 
@@ -324,9 +325,9 @@ class TestDeleteMeal:
     @pytest.mark.asyncio
     async def test_should_return_false_when_not_exists(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_meal_id = 999
 
@@ -343,9 +344,9 @@ class TestGetMealsByRecipeId:
     @pytest.mark.asyncio
     async def test_should_return_meals_for_recipe(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_recipe_id = 1
         expected_meals = [
@@ -377,9 +378,9 @@ class TestCheckRecipeHasMeals:
     @pytest.mark.asyncio
     async def test_should_return_true_when_recipe_has_meals(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_recipe_id = 1
 
@@ -401,9 +402,9 @@ class TestCheckRecipeHasMeals:
     @pytest.mark.asyncio
     async def test_should_return_false_when_recipe_has_no_meals(
         self,
-        meal_use_cases,
-        mock_meal_repository,
-    ):
+        meal_use_cases: MealUseCases,
+        mock_meal_repository: AsyncMock,
+    ) -> None:
         # Given
         test_recipe_id = 1
 
