@@ -1,4 +1,5 @@
 from ..domain.entities.recipe import Recipe
+from ..domain.entities.search_result import SearchResult
 from ..domain.ports.recipe_repository import RecipeRepositoryPort
 
 
@@ -93,10 +94,10 @@ class RecipeUseCases:
         """Delete a recipe by its ID."""
         return await self._repository.delete(recipe_id)
 
-    async def list_recipes(self, skip: int = 0, limit: int = 100) -> list[Recipe]:
+    async def list_recipes(self, skip: int = 0, limit: int = 100) -> SearchResult:
         """List all recipes with pagination."""
         return await self._repository.list_all(skip=skip, limit=limit)
 
-    async def search_recipes(self, keyword: str, skip: int = 0, limit: int = 100) -> list[Recipe]:
+    async def search_recipes(self, keyword: str, skip: int = 0, limit: int = 100) -> SearchResult:
         """Search recipes by keyword."""
         return await self._repository.search(keyword=keyword, skip=skip, limit=limit)

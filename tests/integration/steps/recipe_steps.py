@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from src.di import override_recipe_repository
 from src.domain.entities.recipe import Recipe
+from src.domain.entities.search_result import SearchResult
 from src.domain.ports.recipe_repository import RecipeRepositoryPort
 from src.main import app
 
@@ -75,18 +76,21 @@ def step_given_mocked_recipe_repository(context: Any) -> None:
         del context.mocked_recipes[recipe_id]
         return True
 
-    async def mock_list_all(skip: int = 0, limit: int = 100) -> list[Recipe]:
-        return list(context.mocked_recipes.values())[skip : skip + limit]
+    async def mock_list_all(skip: int = 0, limit: int = 100) -> SearchResult:
+        recipes = list(context.mocked_recipes.values())[skip : skip + limit]
+        return SearchResult(recipes=recipes, total=len(context.mocked_recipes), skip=skip, limit=limit)
 
-    async def mock_search(keyword: str, skip: int = 0, limit: int = 100) -> list[Recipe]:
+    async def mock_search(keyword: str, skip: int = 0, limit: int = 100) -> SearchResult:
         keyword_lower = keyword.lower()
-        return [
+        all_matching = [
             recipe
             for recipe in context.mocked_recipes.values()
             if (recipe.title and keyword_lower in recipe.title.lower())
             or (recipe.summary and keyword_lower in recipe.summary.lower())
             or any(keyword_lower in ing.lower() for ing in (recipe.ingredients or []))
-        ][skip : skip + limit]
+        ]
+        recipes = all_matching[skip : skip + limit]
+        return SearchResult(recipes=recipes, total=len(all_matching), query=keyword, skip=skip, limit=limit)
 
     async def mock_update_instructions(recipe_id: int, instructions: list[str]) -> Recipe | None:
         if recipe_id not in context.mocked_recipes:

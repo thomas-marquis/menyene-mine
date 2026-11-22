@@ -1,3 +1,4 @@
-export * from './RecipeCard/RecipeCard';
-export * from './RecipeDraftCard/RecipeDraftCard';
-export * from './RecipeFormModal/RecipeFormModal';
+export * from './RecipeCard/RecipeCard'
+export * from './RecipeDraftCard/RecipeDraftCard'
+export * from './RecipeFormModal/RecipeFormModal'
+export * from './RecipeCatalog/RecipeCatalog'

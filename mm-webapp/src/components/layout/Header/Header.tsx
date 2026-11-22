@@ -62,6 +62,9 @@ export const Header = () => {
                 <Badge bg="primary" className="ms-1">{formatCount(stats.recipes)}</Badge>
               )}
             </Nav.Link>
+            <Nav.Link as={Link} to="/calendar" className="text-secondary fw-medium d-flex align-items-center gap-1" style={{ color: '#7f8c8d' }}>
+              Calendar
+            </Nav.Link>
             <Nav.Link as={Link} to="/recipes/drafts" className="text-secondary fw-medium d-flex align-items-center gap-1" style={{ color: '#7f8c8d' }}>
               Drafts
               {stats.pendingDrafts > 0 && (

@@ -28,8 +28,7 @@ lint:
 
 # Format
 format:
-	uv run ruff check . --fix
-	uv run ruff format .
+	uv run ruff format --check .
 
 # Type check
 typecheck:
@@ -39,7 +38,7 @@ typecheck:
 test: test-unit test-integration
 
 test-unit:
-	uv run pytest tests/unit/
+	uv run pytest tests/unit/ --cov=src --cov-report=xml --cov-report=term --cov-fail-under=0
 
 test-integration:
 	uv run behave tests/integration/features/
