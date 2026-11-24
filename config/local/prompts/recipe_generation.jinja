@@ -6,6 +6,15 @@ Generate exactly {{ num_recipes }} different recipes based on: {{ instruction }}
 Generate exactly ONE detailed, practical recipe based on: {{ instruction }}
 {%- endif %}
 
+{%- if recent_meals %}
+Recent meals (newest first):
+{%- for meal in recent_meals %}
+- {{ meal.title }}{%- if meal.summary %} - {{ meal.summary }}{%- endif %}
+{%- endfor %}
+
+Important: Generate a recipe that is DIFFERENT from these recent meals. Avoid repeating similar main ingredients, flavors, or cuisine types. Provide variety and balance in your suggestions.
+
+{%- endif %}
 {%- if constraints %}
 Constraints:
 {%- for constraint in constraints %}

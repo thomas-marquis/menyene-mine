@@ -153,3 +153,68 @@ class MealRepositoryImpl(MealRepositoryPort):
             )
             for meal_model in meal_models
         ]
+
+    async def get_meals_for_date_range(
+        self, start_date: date, end_date: date, unique_recipes: bool = False
+    ) -> list[Meal]:
+        """Get all meals within a specific date range (inclusive).
+
+        Args:
+            start_date: The start date of the range (inclusive)
+            end_date: The end date of the range (inclusive)
+            unique_recipes: If True, return only the most recent meal per unique recipe_id
+
+        Returns:
+            List of Meal entities within the date range, ordered by date descending
+        """
+
+        if unique_recipes:
+            subq = (
+                select(MealModel.recipe_id, func.max(MealModel.date).label("max_date"))
+                .where(
+                    and_(
+                        MealModel.date >= start_date,
+                        MealModel.date <= end_date,
+                    )
+                )
+                .group_by(MealModel.recipe_id)
+                .subquery()
+            )
+
+            query = (
+                select(MealModel)
+                .join(
+                    subq,
+                    and_(
+                        MealModel.recipe_id == subq.c.recipe_id,
+                        MealModel.date == subq.c.max_date,
+                    ),
+                )
+                .order_by(MealModel.date.desc(), MealModel.moment.desc())
+            )
+        else:
+            query = (
+                select(MealModel)
+                .where(
+                    and_(
+                        MealModel.date >= start_date,
+                        MealModel.date <= end_date,
+                    )
+                )
+                .order_by(MealModel.date.desc(), MealModel.moment.desc())
+            )
+
+        result = await self._session.execute(query)
+        meal_models = result.scalars().all()
+
+        return [
+            Meal(
+                id=meal_model.id,
+                date=meal_model.date,
+                moment=MealMoment(meal_model.moment),
+                recipe_id=meal_model.recipe_id,
+                created_at=meal_model.created_at,
+                updated_at=meal_model.updated_at,
+            )
+            for meal_model in meal_models
+        ]

@@ -5,14 +5,19 @@ This service uses LangChain with Mistral to generate recipes from user instructi
 Templates are loaded from the config directory.
 """
 
+import asyncio
+from datetime import date, timedelta
+
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel
 
-from ..config import get_prompt_loader, get_static_template_loader
-from ..domain.entities.recipe import Recipe as RecipeEntity
+from ..config import get_prompt_loader
+from ..domain.entities.recipe import Recipe
 from ..domain.exceptions import RecipeGenerationError
+from ..domain.ports.meal_repository import MealRepositoryPort
+from ..domain.ports.recipe_repository import RecipeRepositoryPort
 from .recipe_generator import RecipeGenerator
 from .recipe_models import GeneratedRecipe
 
@@ -21,6 +26,7 @@ class RecipeGenerationState(BaseModel):
     """State for the recipe generation retry workflow."""
 
     instruction: str
+    recent_meals: list[Recipe] | None = None
     attempts: int = 0
     max_attempts: int = 3
     error: str | None = None
@@ -33,11 +39,14 @@ class RecipeAIGenerator(RecipeGenerator):
 
     Uses LangChain with Mistral to generate recipes from Jinja2 templates.
     Implements a retry mechanism with LangGraph for robust generation.
+    Supports optional meal history context for more intelligent recipe suggestions.
     """
 
     def __init__(
         self,
         llm: BaseChatModel,
+        meal_repository: MealRepositoryPort,
+        recipe_repository: RecipeRepositoryPort,
         max_attempts: int = 3,
     ):
         """
@@ -46,9 +55,13 @@ class RecipeAIGenerator(RecipeGenerator):
         Args:
             llm: The LLM instance to use
             max_attempts: Maximum number of generation attempts before failing
+            meal_repository: Repository for fetching meal history
+            recipe_repository: Repository for fetching recipe details
         """
         self._llm = llm
         self._max_attempts = max_attempts
+        self._meal_repository = meal_repository
+        self._recipe_repository = recipe_repository
 
         # Load templates in constructor
         prompt_loader = get_prompt_loader()
@@ -56,27 +69,31 @@ class RecipeAIGenerator(RecipeGenerator):
         self._generation_template = prompt_loader.load("recipe_generation")
         self._instruction_validation_template = prompt_loader.load("instruction_validation")
 
-        static_template_loader = get_static_template_loader()
-        self._recipe_format_template = static_template_loader.load("recipe_format")
-
         self._build_generator_workflow()
 
-    async def generate_recipe(self, instruction: str) -> RecipeEntity:
+    async def generate_recipe(self, instructions: str, include_meal_context: bool = True) -> Recipe:
         """
         Generate a single recipe draft from a user instruction.
 
         Args:
-            instruction: User instruction for recipe generation
+            instructions: User instruction for recipe generation
+            include_meal_context: Whether to include recent meal history in the context (default: True)
 
         Returns:
             Recipe domain entity with title, content, summary, etc.
 
         Raises:
             RecipeGenerationError: If recipe generation fails after all retry attempts
+            Exception: If meal context fetching fails and include_meal_context is True
         """
 
+        recent_meals = []
+        if include_meal_context:
+            recent_meals = await self._get_recent_meals(days=7)
+
         initial_state = RecipeGenerationState(
-            instruction=instruction,
+            instruction=instructions,
+            recent_meals=recent_meals,
             max_attempts=self._max_attempts,
         )
 
@@ -90,7 +107,30 @@ class RecipeAIGenerator(RecipeGenerator):
             error_msg = final_state.error or "Failed to generate recipe after multiple attempts"
             raise RecipeGenerationError(error_msg) from None
 
-    def _to_domain_entity(self, recipe: GeneratedRecipe) -> RecipeEntity:
+    async def _get_recent_meals(self, days: int = 7) -> list[Recipe]:
+        """
+        Fetch recent meal history as Recipe entities for use as AI context.
+
+        Args:
+            days: Number of past days to include in the context
+
+        Returns:
+            List of Recipe entities for recent meals, or empty list if none found
+
+        Raises:
+            Exception: If database error occurs while fetching meals or recipes
+        """
+
+        end_date = date.today()
+        start_date = end_date - timedelta(days=days)
+        meals = await self._meal_repository.get_meals_for_date_range(start_date, end_date, unique_recipes=True)
+
+        coros = [self._recipe_repository.get_by_id(meal.recipe_id) for meal in meals if meal.recipe_id]
+        recipes = await asyncio.gather(*coros)
+
+        return [r for r in recipes if r]
+
+    def _to_domain_entity(self, recipe: GeneratedRecipe) -> Recipe:
         """
         Convert a Pydantic GeneratedRecipe model to a Recipe domain entity.
 
@@ -101,28 +141,7 @@ class RecipeAIGenerator(RecipeGenerator):
             Recipe domain entity with structured fields
         """
 
-        return RecipeEntity(
-            title=recipe.title,
-            summary=recipe.summary,
-            ingredients=recipe.ingredients,
-            instructions=recipe.instructions,
-            servings=recipe.servings,
-            prep_time=recipe.prep_time,
-            cook_time=recipe.cook_time,
-            difficulty=recipe.difficulty,
-        )
-
-    def _format_recipe_content(self, recipe: GeneratedRecipe) -> str:
-        """
-        Format recipe content using the Jinja template.
-
-        Args:
-            recipe: Pydantic GeneratedRecipe model
-
-        Returns:
-            Formatted recipe content as markdown string
-        """
-        return self._recipe_format_template.render(
+        return Recipe(
             title=recipe.title,
             summary=recipe.summary,
             ingredients=recipe.ingredients,
@@ -169,7 +188,10 @@ class RecipeAIGenerator(RecipeGenerator):
 
         try:
             system_prompt = self._system_template.render()
-            generation_prompt = self._generation_template.render(instruction=state.instruction)
+            generation_prompt = self._generation_template.render(
+                instruction=state.instruction,
+                recent_meals=state.recent_meals or [],
+            )
 
             messages: list[BaseMessage] = [
                 SystemMessage(content=system_prompt),
@@ -183,6 +205,7 @@ class RecipeAIGenerator(RecipeGenerator):
 
             return RecipeGenerationState(
                 instruction=state.instruction,
+                recent_meals=state.recent_meals,
                 attempts=state.attempts + 1,
                 max_attempts=state.max_attempts,
                 error=None,
@@ -191,6 +214,7 @@ class RecipeAIGenerator(RecipeGenerator):
         except Exception as e:
             return RecipeGenerationState(
                 instruction=state.instruction,
+                recent_meals=state.recent_meals,
                 attempts=state.attempts + 1,
                 max_attempts=state.max_attempts,
                 error=str(e),
@@ -212,6 +236,7 @@ class RecipeAIGenerator(RecipeGenerator):
         else:
             return RecipeGenerationState(
                 instruction=state.instruction,
+                recent_meals=state.recent_meals,
                 attempts=state.attempts,
                 max_attempts=state.max_attempts,
                 error=state.error or "No recipe generated",

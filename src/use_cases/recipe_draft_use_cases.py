@@ -7,7 +7,7 @@ from typing import Any
 
 from ..domain.entities.recipe import Recipe
 from ..domain.entities.recipe_draft import RecipeDraft, RecipeDraftContent, RecipeDraftStatus
-from ..domain.exceptions import DomainException, InvalidInstructionError
+from ..domain.exceptions import InvalidInstructionError
 from ..domain.ports.recipe_draft_repository import RecipeDraftRepositoryPort
 from ..domain.ports.recipe_repository import RecipeRepositoryPort
 from ..services.judge import Judge
@@ -29,13 +29,19 @@ class RecipeDraftUseCases:
         self._recipe_generator = recipe_generator
         self._llm_judge = judge
 
-    async def generate_drafts(self, user_instruction: str, max_drafts: int = 10) -> list[RecipeDraft]:
+    async def generate_drafts(
+        self,
+        user_instruction: str,
+        max_drafts: int = 10,
+        include_meal_context: bool = True,
+    ) -> list[RecipeDraft]:
         """
         Generate recipe drafts from a user instruction using AI with LLM validation.
 
         Args:
             user_instruction: The user's instruction for recipe generation
             max_drafts: Maximum number of drafts to generate (configurable)
+            include_meal_context: Whether to include recent meal history in the generation context
 
         Returns:
             List of created RecipeDraft entities
@@ -51,27 +57,21 @@ class RecipeDraftUseCases:
         except InvalidInstructionError as e:
             raise InvalidInstructionError(str(e)) from None
 
-        recipe = await self._recipe_generator.generate_recipe(user_instruction)
+        recipe = await self._recipe_generator.generate_recipe(
+            user_instruction,
+            include_meal_context=include_meal_context,
+        )
 
-        if recipe is None:
-            raise DomainException("No recipe generated from instruction")
+        draft = RecipeDraft(
+            user_instruction=user_instruction,
+            generated_content=recipe,
+            status=RecipeDraftStatus.DRAFT,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+        created_draft = await self._draft_repository.create(draft)
 
-        validated_recipes = [recipe]
-
-        # Create draft for validated recipe
-        drafts = []
-        for recipe_data in validated_recipes:
-            draft = RecipeDraft(
-                user_instruction=user_instruction,
-                generated_content=recipe_data,
-                status=RecipeDraftStatus.DRAFT,
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-            )
-            created_draft = await self._draft_repository.create(draft)
-            drafts.append(created_draft)
-
-        return drafts
+        return [created_draft]
 
     async def get_draft(self, draft_id: int) -> RecipeDraft | None:
         """Get a specific recipe draft by ID."""

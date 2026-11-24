@@ -28,6 +28,19 @@ class MealRepositoryPort(ABC):
         ...
 
     @abstractmethod
+    async def get_meals_for_date_range(
+        self, start_date: date, end_date: date, unique_recipes: bool = False
+    ) -> list[Meal]:
+        """Get all meals within a specific date range.
+
+        Args:
+            start_date: The start date of the range (inclusive)
+            end_date: The end date of the range (inclusive)
+            unique_recipes: If True, return only one meal per unique recipe_id
+        """
+        ...
+
+    @abstractmethod
     async def update(self, meal: Meal) -> Meal | None:
         """Update an existing meal."""
         ...

@@ -7,7 +7,7 @@ an AI API key. It's used when AI is disabled in the configuration.
 
 import random
 
-from ..domain.entities.recipe import Recipe as RecipeEntity
+from ..domain.entities.recipe import Recipe as Recipe
 from .recipe_generator import RecipeGenerator
 
 
@@ -22,19 +22,21 @@ class MockRecipeAIGenerator(RecipeGenerator):
         """Initialize the mock recipe generator."""
         self._random = random
 
-    async def generate_recipe(self, instruction: str) -> RecipeEntity:
+    async def generate_recipe(self, instruction: str, include_meal_context: bool = True) -> Recipe:
         """
         Generate a single mock recipe draft from a user instruction.
 
         Args:
             instruction: User instruction for recipe generation
+            include_meal_context: Whether to include meal history context (ignored for mock)
 
         Returns:
             Mock Recipe domain entity
         """
+        # For mock generator, we ignore the meal context parameter
         return self._create_mock_recipe(instruction, 1)
 
-    def _create_mock_recipe(self, instruction: str, index: int) -> RecipeEntity:
+    def _create_mock_recipe(self, instruction: str, index: int) -> Recipe:
         """Create a single mock recipe as a domain entity."""
         # Extract keywords from instruction for more relevant mocks
         keywords = [word.lower() for word in instruction.split() if len(word) > 3]
@@ -77,7 +79,7 @@ class MockRecipeAIGenerator(RecipeGenerator):
             f"This dish serves {servings} and takes about {prep_time_minutes} minutes to prepare."
         )
 
-        return RecipeEntity(
+        return Recipe(
             title=title,
             summary=summary,
             ingredients=ingredients,

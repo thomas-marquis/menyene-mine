@@ -1,7 +1,7 @@
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...domain.entities.recipe import Recipe as RecipeEntity
+from ...domain.entities.recipe import Recipe as Recipe
 from ...domain.entities.search_result import SearchResult
 from ...domain.ports.recipe_repository import RecipeRepositoryPort
 from ..models.recipe import Recipe as RecipeModel
@@ -13,7 +13,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create(self, recipe: RecipeEntity) -> RecipeEntity:
+    async def create(self, recipe: Recipe) -> Recipe:
         """Create a new recipe in the database."""
         recipe_model = RecipeModel(
             title=recipe.title,
@@ -28,7 +28,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
         self._session.add(recipe_model)
         await self._session.commit()
         await self._session.refresh(recipe_model)
-        return RecipeEntity(
+        return Recipe(
             id=recipe_model.id,
             title=recipe_model.title,
             creation_date=recipe_model.creation_date,
@@ -42,13 +42,13 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             difficulty=recipe_model.difficulty,
         )
 
-    async def get_by_id(self, recipe_id: int) -> RecipeEntity | None:
+    async def get_by_id(self, recipe_id: int) -> Recipe | None:
         """Get a recipe by its ID."""
         result = await self._session.execute(select(RecipeModel).where(RecipeModel.id == recipe_id))
         recipe_model = result.scalar_one_or_none()
         if recipe_model is None:
             return None
-        return RecipeEntity(
+        return Recipe(
             id=recipe_model.id,
             title=recipe_model.title,
             creation_date=recipe_model.creation_date,
@@ -62,7 +62,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             difficulty=recipe_model.difficulty,
         )
 
-    async def update(self, recipe: RecipeEntity) -> RecipeEntity | None:
+    async def update(self, recipe: Recipe) -> Recipe | None:
         """Update an existing recipe."""
         result = await self._session.execute(select(RecipeModel).where(RecipeModel.id == recipe.id))
         recipe_model = result.scalar_one_or_none()
@@ -85,9 +85,11 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             recipe_model.cook_time = recipe.cook_time
         if recipe.difficulty is not None:
             recipe_model.difficulty = recipe.difficulty
+
         await self._session.commit()
         await self._session.refresh(recipe_model)
-        return RecipeEntity(
+
+        return Recipe(
             id=recipe_model.id,
             title=recipe_model.title,
             creation_date=recipe_model.creation_date,
@@ -126,7 +128,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
 
         return SearchResult(
             recipes=[
-                RecipeEntity(
+                Recipe(
                     id=r.id,
                     title=r.title,
                     creation_date=r.creation_date,
@@ -178,7 +180,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
 
         return SearchResult(
             recipes=[
-                RecipeEntity(
+                Recipe(
                     id=r.id,
                     title=r.title,
                     creation_date=r.creation_date,
@@ -199,7 +201,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
             limit=limit,
         )
 
-    async def update_instructions(self, recipe_id: int, instructions: list[str]) -> RecipeEntity | None:
+    async def update_instructions(self, recipe_id: int, instructions: list[str]) -> Recipe | None:
         """Update only the instructions for a recipe."""
         result = await self._session.execute(select(RecipeModel).where(RecipeModel.id == recipe_id))
         recipe_model = result.scalar_one_or_none()
@@ -209,7 +211,7 @@ class RecipeRepositoryImpl(RecipeRepositoryPort):
         recipe_model.instructions = instructions
         await self._session.commit()
         await self._session.refresh(recipe_model)
-        return RecipeEntity(
+        return Recipe(
             id=recipe_model.id,
             title=recipe_model.title,
             creation_date=recipe_model.creation_date,

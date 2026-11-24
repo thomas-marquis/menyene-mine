@@ -68,7 +68,7 @@ class TestRecipeDraftUseCases:
 
         # Then
         assert len(result) == 1
-        mock_generator.generate_recipe.assert_called_once_with("Test instruction")
+        mock_generator.generate_recipe.assert_called_once_with("Test instruction", include_meal_context=True)
         assert mock_draft_repo.create.call_count == 1
 
     @pytest.mark.asyncio

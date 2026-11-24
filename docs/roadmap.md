@@ -1,44 +1,49 @@
 # Project's roadmap
 
-## User management
+## Feature Backlog
 
-- authetication
-- in-app user managment (add a user table, user profile view, connect recipe to a user)
+* **001 - Update the grocery list when a draft recipe is getting validated**
 
-## Meal history
+* **002 - when generated, display the new draft on top of the generation screen**
 
-- add a calendar view to see/set past meals
-- add a button "My today's meals" to set what the user has eaten today
+* **003 - Enforce a maximum number of item in the grocery list (200)**
 
-## Meal planner
+* **005 - manage multiple users with authentication**
 
-- the user can set futures meals
-- when the date is pasted, the future meal previously added is not automatically added to the meal history, the user has to confirm it (or delete it, or change it with an existing recipe or a new one)
+* **006 - let a user shares publicly a recipe and separate the public and the private recipe catalogue**
 
-## Meal builder
+* **007 - gather multiple user into a family: they all share the same calendar and recipe catalogue**
 
-- create an agent that create recipes based on the user's past meals and instructions
-- the user can select the recipes to keep and to add
+* **008 - create a new beautiful UI chart**
 
-## Share recipes
+* **009 - support multiple languages (fr, en, no) and let the user select**
 
-- mark some recipe as public
+* **010 - generate illustration picture for recipes with a validation/refusal/retry system**
 
+* **011 - let the user regenerate a draft, with instruction modifications**
 
-## AI usage measurement
+* **012 - Asynchronous generation: generate the recipe in the background and alert the user when it's done**
 
-- per user
+## Technical backlog
 
+* **013 - add tests to the frontend**
 
-## Admin view
+* **014 - remove the notion of environment from the code: inject it through an env var**
 
-- introduce roles (admin, user, etc.)
-- add an admin view (bundled separately in JS)
+* **015 - configure a prettier and a linter + their make command for the frontend**
 
-## Freemium & Paid subscription
+* **016 - split the frontend into smaller components**
 
+* **017 - Remove the mock recipe generator**
 
+* **018 - move the AI-generation code to the use case layer**
 
-## Technical improvements
+* **019 - wrap langgraph nodes into classes**
 
-- Use NextJS & SSR for better performance and SEO
+## ToDo
+
+# In progress
+
+# Done
+
+* **004 - add the nth past meals to the generator context**
