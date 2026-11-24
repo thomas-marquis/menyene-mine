@@ -95,6 +95,7 @@ class RecipeDraftGenerateRequest(BaseModel):
 
     instruction: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
     max_drafts: int = 10
+    include_meal_context: bool = True
 
 
 class RecipeDraftResponse(BaseModel):

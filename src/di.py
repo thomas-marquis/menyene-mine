@@ -159,11 +159,18 @@ def get_stats_use_cases(
     return _stats_use_cases.get()  # type: ignore
 
 
-def get_ai_recipe_generator() -> RecipeGenerator:
+def get_ai_recipe_generator(
+    meal_repository: Annotated[MealRepositoryPort, Depends(get_meal_repository)],
+    recipe_repository: Annotated[RecipeRepositoryPort, Depends(get_recipe_repository)],
+) -> RecipeGenerator:
     """
     Dependency for AIRecipeGenerator.
 
-    Creates the appropriate generator based on settings and injects the LLM.
+    Creates the appropriate generator based on settings and injects the LLM and repositories.
+
+    Args:
+        meal_repository: Meal repository for fetching meal history
+        recipe_repository: Recipe repository for fetching recipe details
 
     Returns:
         RecipeGenerator: Either RecipeAIGenerator or MockRecipeAIGenerator
@@ -175,6 +182,8 @@ def get_ai_recipe_generator() -> RecipeGenerator:
         return RecipeAIGenerator(
             llm=get_llm(),
             max_attempts=3,
+            meal_repository=meal_repository,
+            recipe_repository=recipe_repository,
         )
 
     return MockRecipeAIGenerator()

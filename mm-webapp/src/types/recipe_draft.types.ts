@@ -39,6 +39,7 @@ export interface RecipeDraftStats {
 export interface GenerateDraftRequest {
   instruction: string;
   max_drafts?: number;
+  include_meal_context?: boolean;
 }
 
 export interface RecipeDraftActionResponse {

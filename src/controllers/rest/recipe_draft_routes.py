@@ -57,6 +57,7 @@ async def generate_drafts_endpoint(
         drafts = await use_cases.generate_drafts(
             user_instruction=request.instruction,
             max_drafts=request.max_drafts,
+            include_meal_context=request.include_meal_context,
         )
         return [_draft_entity_to_response(d) for d in drafts]
     except Exception as e:

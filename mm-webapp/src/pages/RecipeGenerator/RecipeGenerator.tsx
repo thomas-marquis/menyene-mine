@@ -12,6 +12,7 @@ export const RecipeGeneratorPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [instruction, setInstruction] = useState('');
+  const [includeMealContext, setIncludeMealContext] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [drafts, setDrafts] = useState<RecipeDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +42,7 @@ export const RecipeGeneratorPage = () => {
         const newDrafts = await recipeDraftService.generateDrafts({
           instruction: trimmedInstruction,
           max_drafts: 1,
+          include_meal_context: includeMealContext,
         });
 
         setDrafts(newDrafts);
@@ -80,7 +82,7 @@ export const RecipeGeneratorPage = () => {
         setIsGenerating(false);
       }
     },
-    [instruction]
+    [instruction, includeMealContext]
   );
 
   const handleViewDraft = (draftId: number) => {
@@ -191,6 +193,17 @@ export const RecipeGeneratorPage = () => {
               <Form.Text className="text-muted">
                 Be as specific as you like! The AI will generate recipes based on your description.
               </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="checkbox"
+                id="include-meal-context"
+                label="Use recent meals as context (helps the AI suggest different dishes)"
+                checked={includeMealContext}
+                onChange={(e) => setIncludeMealContext(e.target.checked)}
+                disabled={isGenerating}
+              />
             </Form.Group>
 
             <div className="d-flex flex-wrap gap-2">
