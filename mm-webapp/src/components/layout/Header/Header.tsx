@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Navbar, Container, Nav, Badge } from 'react-bootstrap';
-import { statsService } from '../../../services/statsService';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { setStats, selectStats, selectStatsLoaded } from '../../../store/statsSlice';
+import { selectStats} from '../../../store/statsSelectors';
+import {getAllStats} from '../../../store/statsThunks'
 
 const formatCount = (count: number): string => {
   return count > 99 ? '99+' : count.toString();
@@ -14,25 +14,16 @@ const REFRESH_INTERVAL_MS = 30000; // 30 seconds
 export const Header = () => {
   const dispatch = useAppDispatch();
   const stats = useAppSelector(selectStats);
-  const statsLoaded = useAppSelector(selectStatsLoaded);
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await statsService.getAllStats();
-      dispatch(setStats(response));
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  }, [dispatch]);
 
   useEffect(() => {
-    if (!statsLoaded) {
-      fetchStats();
+    const fetchStats =() => {
+      dispatch(getAllStats())
     }
+
+    fetchStats();
 
     const intervalId = setInterval(fetchStats, REFRESH_INTERVAL_MS);
 
-    // Set up visibility change listener to refresh when tab becomes visible
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchStats();
@@ -45,7 +36,7 @@ export const Header = () => {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [fetchStats, statsLoaded]);
+  }, []);
 
   return (
     <Navbar expand="lg" className="bg-white shadow-sm" style={{ padding: '1rem 0' }}>
