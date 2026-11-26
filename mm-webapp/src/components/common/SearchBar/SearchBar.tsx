@@ -1,42 +1,42 @@
-import { type ChangeEvent, type KeyboardEvent, type FormEvent } from 'react';
-import { Form, InputGroup } from 'react-bootstrap';
+import { type ChangeEvent, type KeyboardEvent, type FormEvent } from 'react'
+import { Form, InputGroup } from 'react-bootstrap'
 
 /**
  * Props for the SearchBar component
  */
 interface SearchBarProps {
   /** Current search query value */
-  value: string;
+  value: string
   /** Callback when the search query changes */
-  onChange: (value: string) => void;
+  onChange: (value: string) => void
   /** Optional callback when the search form is submitted (e.g., on Enter key or button click) */
-  onSubmit?: (value: string) => void;
+  onSubmit?: (value: string) => void
   /** Placeholder text for the search input */
-  placeholder?: string;
+  placeholder?: string
   /** Whether the search input is disabled */
-  disabled?: boolean;
+  disabled?: boolean
   /** Additional CSS class name for the form container */
-  className?: string;
+  className?: string
 }
 
 /**
  * SearchBar - A reusable search input component with optional submit button.
- * 
+ *
  * Features:
  * - Controlled input with value and onChange props
  * - Optional form submission with onSubmit callback
  * - Supports Enter key for submission
  * - Disabled state
  * - Customizable placeholder
- * 
+ *
  * @example
  * // Basic search with onChange only
  * <SearchBar value={query} onChange={setQuery} placeholder="Search..." />
- * 
+ *
  * @example
  * // Search with form submission
- * <SearchBar 
- *   value={query} 
+ * <SearchBar
+ *   value={query}
  *   onChange={setQuery}
  *   onSubmit={(value) => performSearch(value)}
  *   placeholder="Search recipes..."
@@ -51,28 +51,28 @@ export const SearchBar = ({
   className = '',
 }: SearchBarProps) => {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
+    onChange(e.target.value)
+  }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSubmit) {
-      e.preventDefault();
-      onSubmit(value);
+      e.preventDefault()
+      onSubmit(value)
     }
-  };
+  }
 
   const handleFormSubmit = (e: FormEvent) => {
     if (onSubmit) {
-      e.preventDefault();
-      onSubmit(value);
+      e.preventDefault()
+      onSubmit(value)
     }
-  };
+  }
 
   return (
     <Form onSubmit={handleFormSubmit} className={className}>
       <InputGroup>
         <Form.Control
-          type="text"
+          type='text'
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -80,15 +80,11 @@ export const SearchBar = ({
           disabled={disabled}
         />
         {onSubmit && (
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={disabled || !value.trim()}
-          >
-            <i className="bi bi-search"></i>
+          <button type='submit' className='btn btn-primary' disabled={disabled || !value.trim()}>
+            <i className='bi bi-search'></i>
           </button>
         )}
       </InputGroup>
     </Form>
-  );
-};
+  )
+}
