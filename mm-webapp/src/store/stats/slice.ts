@@ -1,8 +1,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { RootState } from './index'
-import type { StatsResponse } from '../types/stats.types'
-import type { StatsState } from './statsState'
-import { getAllStats } from './statsThunks'
+import type { RootState } from '../index'
+import type { StatsResponse } from '../../types/stats.types'
+import type { StatsState } from './state'
+import { getAllStats } from './thunks'
 
 const initialState: StatsState = {
   recipes: 0,

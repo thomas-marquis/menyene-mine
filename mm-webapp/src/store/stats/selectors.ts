@@ -1,4 +1,4 @@
-import type { RootState } from './index'
+import type { RootState } from '../index'
 
 export const selectStats = (state: RootState) => state.stats
 export const selectRecipesCount = (state: RootState) => state.stats.recipes
