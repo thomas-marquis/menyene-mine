@@ -1,0 +1,6 @@
+import { Recipe } from '../../types/recipe.types'
+
+export interface RecipesState {
+  recipes: Recipe[]
+  page: number
+}
