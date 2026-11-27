@@ -1,4 +1,4 @@
-import { type ChangeEvent, type KeyboardEvent, type FormEvent } from 'react'
+import { type ChangeEvent, type KeyboardEvent } from 'react'
 import { Form, InputGroup } from 'react-bootstrap'
 
 /**
@@ -61,7 +61,7 @@ export const SearchBar = ({
     }
   }
 
-  const handleFormSubmit = (e: FormEvent) => {
+  const handleFormSubmit = (e: React.SubmitEvent) => {
     if (onSubmit) {
       e.preventDefault()
       onSubmit(value)
